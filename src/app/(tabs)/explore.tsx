@@ -7,14 +7,22 @@ import { ExternalLink } from '@/components/external-link';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Collapsible } from '@/components/ui/collapsible';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import {
+  BORDER_RADIUS,
+  BottomTabInset,
+  MaxContentWidth,
+  OPACITY,
+  SHADOWS,
+  SPACING,
+  TYPOGRAPHY,
+} from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function TabTwoScreen() {
   const safeAreaInsets = useSafeAreaInsets();
   const insets = {
     ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+    bottom: safeAreaInsets.bottom + BottomTabInset + SPACING.md,
   };
   const theme = useTheme();
 
@@ -42,12 +50,14 @@ export default function TabTwoScreen() {
 
           <ExternalLink href="https://docs.expo.dev" asChild>
             <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
+              <ThemedView
+                type="surface"
+                style={[styles.linkButton, { borderColor: theme.border }, SHADOWS.light]}>
                 <ThemedText type="link">Expo documentation</ThemedText>
                 <SymbolView
-                  tintColor={theme.text}
+                  tintColor={theme.primary}
                   name={{ ios: 'arrow.up.right.square', android: 'link' }}
-                  size={12}
+                  size={TYPOGRAPHY.sizes.xs}
                 />
               </ThemedView>
             </Pressable>
@@ -126,34 +136,35 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   titleContainer: {
-    gap: Spacing.three,
+    gap: SPACING.md,
     alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.xxxl,
   },
   centerText: {
     textAlign: 'center',
   },
   pressed: {
-    opacity: 0.7,
+    opacity: OPACITY.pressed,
   },
   linkButton: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.pill,
+    borderWidth: 1,
     justifyContent: 'center',
-    gap: Spacing.one,
+    gap: SPACING.xs,
     alignItems: 'center',
   },
   sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
+    gap: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
   },
   imageReact: {
-    width: 100,
-    height: 100,
+    width: SPACING.xxxl * 2,
+    height: SPACING.xxxl * 2,
     alignSelf: 'center',
   },
 });

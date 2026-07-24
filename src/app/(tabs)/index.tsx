@@ -6,7 +6,14 @@ import { AnimatedIcon } from '@/components/animated-icon';
 import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import {
+  BORDER_RADIUS,
+  BottomTabInset,
+  MaxContentWidth,
+  SHADOWS,
+  SPACING,
+} from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 function getDevMenuHint() {
   if (Device.isDevice) {
@@ -25,6 +32,8 @@ function getDevMenuHint() {
 }
 
 export default function HomeScreen() {
+  const theme = useTheme();
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -35,11 +44,13 @@ export default function HomeScreen() {
           </ThemedText>
         </ThemedView>
 
-        <ThemedText type="code" style={styles.code}>
+        <ThemedText type="code" themeColor="textTertiary" style={styles.code}>
           get started
         </ThemedText>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
+        <ThemedView
+          type="surface"
+          style={[styles.stepContainer, { borderColor: theme.border }]}>
           <HintRow
             title="Try editing"
             hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
@@ -63,18 +74,18 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
+    gap: SPACING.md,
+    paddingBottom: BottomTabInset + SPACING.md,
     maxWidth: MaxContentWidth,
   },
   heroSection: {
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.lg,
   },
   title: {
     textAlign: 'center',
@@ -83,10 +94,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   stepContainer: {
-    gap: Spacing.three,
+    gap: SPACING.md,
     alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 1,
+    ...SHADOWS.light,
   },
 });

@@ -1,4 +1,4 @@
-export interface Activity {
+export interface IActivity {
   activityId: string;
   tripId: string;
   categoryId: string;

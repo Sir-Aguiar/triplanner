@@ -5,7 +5,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { BORDER_RADIUS, OPACITY, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
@@ -17,12 +17,12 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
       <Pressable
         style={({ pressed }) => [styles.heading, pressed && styles.pressedHeading]}
         onPress={() => setIsOpen((value) => !value)}>
-        <ThemedView type="backgroundElement" style={styles.button}>
+        <ThemedView type="surface" style={[styles.button, { borderColor: theme.border }]}>
           <SymbolView
             name={{ ios: 'chevron.right', android: 'chevron_right' }}
-            size={14}
+            size={TYPOGRAPHY.sizes.sm}
             weight="bold"
-            tintColor={theme.text}
+            tintColor={theme.primary}
             style={{ transform: [{ rotate: isOpen ? '-90deg' : '90deg' }] }}
           />
         </ThemedView>
@@ -31,7 +31,7 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
       </Pressable>
       {isOpen && (
         <Animated.View entering={FadeIn.duration(200)}>
-          <ThemedView type="backgroundElement" style={styles.content}>
+          <ThemedView type="surface" style={[styles.content, { borderColor: theme.border }]}>
             {children}
           </ThemedView>
         </Animated.View>
@@ -44,22 +44,24 @@ const styles = StyleSheet.create({
   heading: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: SPACING.sm,
   },
   pressedHeading: {
-    opacity: 0.7,
+    opacity: OPACITY.pressed,
   },
   button: {
-    width: Spacing.four,
-    height: Spacing.four,
-    borderRadius: 12,
+    width: SPACING.lg,
+    height: SPACING.lg,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   content: {
-    marginTop: Spacing.three,
-    borderRadius: Spacing.three,
-    marginLeft: Spacing.four,
-    padding: Spacing.four,
+    marginTop: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    marginLeft: SPACING.lg,
+    padding: SPACING.lg,
   },
 });

@@ -1,6 +1,6 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, ThemeColor, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
@@ -14,14 +14,14 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
   return (
     <Text
       style={[
-        { color: theme[themeColor ?? 'text'] },
+        { color: theme[themeColor ?? 'textPrimary'] },
         type === 'default' && styles.default,
         type === 'title' && styles.title,
         type === 'small' && styles.small,
         type === 'smallBold' && styles.smallBold,
         type === 'subtitle' && styles.subtitle,
         type === 'link' && styles.link,
-        type === 'linkPrimary' && styles.linkPrimary,
+        type === 'linkPrimary' && [styles.linkPrimary, { color: theme.primary }],
         type === 'code' && styles.code,
         style,
       ]}
@@ -32,42 +32,42 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
 const styles = StyleSheet.create({
   small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
+    fontSize: TYPOGRAPHY.sizes.sm,
+    lineHeight: TYPOGRAPHY.lineHeights.sm,
+    fontWeight: TYPOGRAPHY.weights.medium,
   },
   smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 700,
+    fontSize: TYPOGRAPHY.sizes.sm,
+    lineHeight: TYPOGRAPHY.lineHeights.sm,
+    fontWeight: TYPOGRAPHY.weights.bold,
   },
   default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
+    fontSize: TYPOGRAPHY.sizes.md,
+    lineHeight: TYPOGRAPHY.lineHeights.md,
+    fontWeight: TYPOGRAPHY.weights.medium,
   },
   title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
+    fontSize: TYPOGRAPHY.sizes.xxxl,
+    fontWeight: TYPOGRAPHY.weights.semibold,
+    lineHeight: TYPOGRAPHY.lineHeights.xxxl,
   },
   subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
+    fontSize: TYPOGRAPHY.sizes.xxl,
+    lineHeight: TYPOGRAPHY.lineHeights.xxl,
+    fontWeight: TYPOGRAPHY.weights.semibold,
   },
   link: {
-    lineHeight: 30,
-    fontSize: 14,
+    lineHeight: TYPOGRAPHY.lineHeights.lg,
+    fontSize: TYPOGRAPHY.sizes.sm,
   },
   linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
-    color: '#3c87f7',
+    lineHeight: TYPOGRAPHY.lineHeights.lg,
+    fontSize: TYPOGRAPHY.sizes.sm,
   },
   code: {
     fontFamily: Fonts.mono,
-    fontWeight: Platform.select({ android: 700 }) ?? 500,
-    fontSize: 12,
+    fontWeight: Platform.select({ android: TYPOGRAPHY.weights.bold }) ?? TYPOGRAPHY.weights.medium,
+    fontSize: TYPOGRAPHY.sizes.xs,
+    lineHeight: TYPOGRAPHY.lineHeights.xs,
   },
 });

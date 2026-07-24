@@ -4,8 +4,14 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.7",
+    "@hookform/resolvers": "^5.4.0",
+    "@morrowdigital/watermelondb-expo-plugin": "2.3.3",
+    "@nozbe/watermelondb": "0.28.0",
+    "@nozbe/with-observables": "1.6.0",
     "expo": "~57.0.8",
+    "expo-build-properties": "~57.0.7",
     "expo-constants": "~57.0.7",
+    "expo-crypto": "~57.0.1",
     "expo-device": "~57.0.1",
     "expo-font": "~57.0.1",
     "expo-glass-effect": "~57.0.1",
@@ -18,22 +24,31 @@
     "expo-system-ui": "~57.0.1",
     "expo-web-browser": "~57.0.2",
     "react": "19.2.3",
+    "react-hook-form": "^7.82.0",
     "react-native": "0.86.0",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-reanimated": "4.5.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
-    "react-native-worklets": "0.10.0"
+    "react-native-worklets": "0.10.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-decorators": "^7.29.7",
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "@nozbe/with-observables": {
+      "react": "$react",
+      "@types/react": "$@types/react"
+    }
   },
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "lint": "expo lint"
   },
   "private": true

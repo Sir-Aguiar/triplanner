@@ -1,4 +1,4 @@
-export interface Trip {
+export interface ITrip {
   tripId: string;
   title: string;
   description: string;

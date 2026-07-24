@@ -5,8 +5,11 @@ import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { BORDER_RADIUS, COLORS } from '@/constants/theme';
+
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
+const ICON_SIZE = 128;
 
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
@@ -123,8 +126,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: 128,
-    height: 128,
+    width: ICON_SIZE,
+    height: ICON_SIZE,
     zIndex: 100,
   },
   image: {
@@ -132,15 +135,15 @@ const styles = StyleSheet.create({
     height: 71,
   },
   background: {
-    borderRadius: 40,
-    experimental_backgroundImage: `linear-gradient(180deg, #3C9FFE, #0274DF)`,
-    width: 128,
-    height: 128,
+    borderRadius: BORDER_RADIUS.xl,
+    experimental_backgroundImage: `linear-gradient(180deg, ${COLORS.secondary}, ${COLORS.primary})`,
+    width: ICON_SIZE,
+    height: ICON_SIZE,
     position: 'absolute',
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
