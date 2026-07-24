@@ -35,7 +35,6 @@ import {
 import {
   createTripDefaultValues,
   createTripSchema,
-  type CreateActivityDTO,
   type CreateTripDTO,
   type CreateTripFormValues,
 } from '@/dtos';
@@ -48,8 +47,7 @@ import {
   removePendingActivity,
 } from '@/stores/pending-activities';
 import {
-  applyActivityCostToBudget,
-  applyActivityRemovalFromBudget,
+  applyTravelersChangeToBudget,
   sumActivityCosts,
 } from '@/utils/budget';
 import { formatCurrencyBrl } from '@/utils/currency';
@@ -63,9 +61,9 @@ export default function NovaViagemScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [pendingItems, setPendingItems] = useState<ActivityListItem[]>([]);
 
-  const activitiesCostSum = useMemo(() => sumActivityCosts(pending), [pending]);
-  const minBudgetRef = useRef(activitiesCostSum);
-  minBudgetRef.current = activitiesCostSum;
+  const minBudgetRef = useRef(0);
+  const previousActivitiesSumRef = useRef(0);
+  const hasSyncedBudgetRef = useRef(false);
 
   const dynamicResolver = useMemo(
     () => async (values: CreateTripFormValues, context: unknown, options: unknown) => {
@@ -81,6 +79,7 @@ export default function NovaViagemScreen() {
     handleSubmit,
     setValue,
     getValues,
+    clearErrors,
     formState: { isSubmitting },
   } = useForm<CreateTripFormValues, unknown, CreateTripDTO>({
     resolver: dynamicResolver,
@@ -89,10 +88,20 @@ export default function NovaViagemScreen() {
   });
 
   const startDate = useWatch({ control, name: 'startDate' });
+  const travelersWatch = useWatch({ control, name: 'travelers' });
+  const travelers = Math.max(1, Number(travelersWatch) || 1);
   const isBusy = submitting || isSubmitting;
+
+  const activitiesCostSum = useMemo(
+    () => sumActivityCosts(pending, travelers),
+    [pending, travelers],
+  );
 
   useEffect(() => {
     clearPendingActivities();
+    previousActivitiesSumRef.current = 0;
+    minBudgetRef.current = 0;
+    hasSyncedBudgetRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -109,29 +118,41 @@ export default function NovaViagemScreen() {
     };
   }, [pending]);
 
-  const handleActivitySaved = (data: CreateActivityDTO) => {
-    const nextSum = activitiesCostSum + data.cost;
-    const nextBudget = applyActivityCostToBudget(getValues('totalBudget'), data.cost, nextSum);
-    setValue('totalBudget', nextBudget, { shouldDirty: true, shouldValidate: true });
-  };
+  /**
+   * Mantém totalBudget e o piso de validação sincronizados com a soma efetiva
+   * das atividades (adição, remoção e mudança de viajantes).
+   */
+  useEffect(() => {
+    minBudgetRef.current = activitiesCostSum;
 
-  const handleDeletePendingActivity = (tempId: string) => {
-    const removed = pending.find((item) => item.tempId === tempId);
-    if (!removed) {
+    if (!hasSyncedBudgetRef.current) {
+      hasSyncedBudgetRef.current = true;
+      previousActivitiesSumRef.current = activitiesCostSum;
       return;
     }
 
-    removePendingActivity(tempId);
-    const nextSum = activitiesCostSum - removed.cost;
-    const nextBudget = applyActivityRemovalFromBudget(
+    const previousSum = previousActivitiesSumRef.current;
+    if (previousSum === activitiesCostSum) {
+      return;
+    }
+
+    const nextBudget = applyTravelersChangeToBudget(
       getValues('totalBudget'),
-      removed.cost,
-      nextSum,
+      previousSum,
+      activitiesCostSum,
     );
+
+    previousActivitiesSumRef.current = activitiesCostSum;
+
     setValue('totalBudget', nextBudget > 0 ? nextBudget : null, {
       shouldDirty: true,
       shouldValidate: true,
     });
+    clearErrors('totalBudget');
+  }, [activitiesCostSum, getValues, setValue, clearErrors]);
+
+  const handleDeletePendingActivity = (tempId: string) => {
+    removePendingActivity(tempId);
     showToast('Atividade removida');
   };
 
@@ -291,7 +312,6 @@ export default function NovaViagemScreen() {
       <ActivityFormModal
         visible={activityModalOpen}
         onClose={() => setActivityModalOpen(false)}
-        onSaved={handleActivitySaved}
       />
     </ThemedView>
   );

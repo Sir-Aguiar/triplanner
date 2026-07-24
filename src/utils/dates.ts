@@ -26,3 +26,27 @@ export function formatDatePtBr(iso: string): string {
     year: 'numeric',
   });
 }
+
+/** Chave YYYY-MM-DD (calendário local derivado do ISO UTC de negócio). */
+export function getDateKey(iso: string): string {
+  const date = fromUtcIsoDate(iso);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/** Número do dia da viagem (Dia 1 = data de início). */
+export function getTripDayNumber(activityIso: string, tripStartIso: string): number {
+  const activity = fromUtcIsoDate(activityIso);
+  const start = fromUtcIsoDate(tripStartIso);
+  const diffMs =
+    Date.UTC(activity.getFullYear(), activity.getMonth(), activity.getDate()) -
+    Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+  return Math.max(1, Math.floor(diffMs / (24 * 60 * 60 * 1000)) + 1);
+}
+
+export function formatTripDayLabel(activityIso: string, tripStartIso: string): string {
+  const dayNumber = getTripDayNumber(activityIso, tripStartIso);
+  return `Dia ${dayNumber} - ${formatDatePtBr(activityIso)}`;
+}

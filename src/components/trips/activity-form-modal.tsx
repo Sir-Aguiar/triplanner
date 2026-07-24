@@ -20,6 +20,7 @@ import {
   FormTextArea,
   FormTextInput,
 } from '@/components/form';
+import type { ActivityListItem } from '@/components/trips/activity-timeline';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
@@ -39,21 +40,36 @@ import { fromUtcIsoDate } from '@/utils/dates';
 type ActivityFormModalProps = {
   visible: boolean;
   onClose: () => void;
-  /** Quando informado, salva no banco. Sem tripId, guarda em cache temporário. */
   tripId?: string;
+  /** Quando informado, abre em modo edição. */
+  activity?: ActivityListItem | null;
   onSaved?: (data: CreateActivityDTO) => void;
 };
+
+function toFormValues(activity: ActivityListItem): CreateActivityFormValues {
+  return {
+    categoryId: activity.categoryId ?? '',
+    title: activity.title,
+    startTime: activity.startTime,
+    endTime: activity.endTime === activity.startTime ? '' : activity.endTime,
+    cost: activity.cost > 0 ? activity.cost : null,
+    isPerPerson: activity.isPerPerson,
+    notes: activity.notes ?? '',
+  };
+}
 
 export function ActivityFormModal({
   visible,
   onClose,
   tripId,
+  activity = null,
   onSaved,
 }: ActivityFormModalProps) {
   const theme = useTheme();
   const { showToast } = useToast();
   const { categories, loading: loadingCategories } = useCategories();
   const [submitting, setSubmitting] = useState(false);
+  const isEditing = Boolean(activity?.id);
 
   const {
     control,
@@ -70,10 +86,12 @@ export function ActivityFormModal({
   const isBusy = submitting || isSubmitting;
 
   useEffect(() => {
-    if (visible) {
-      reset(createActivityDefaultValues);
+    if (!visible) {
+      return;
     }
-  }, [visible, reset]);
+
+    reset(activity ? toFormValues(activity) : createActivityDefaultValues);
+  }, [visible, activity, reset]);
 
   const onSubmit = handleSubmit(async (data) => {
     if (isBusy) {
@@ -82,13 +100,17 @@ export function ActivityFormModal({
 
     setSubmitting(true);
     try {
-      if (tripId) {
+      if (isEditing && activity) {
+        await activityService.update(activity.id, data);
+        showToast('Atividade atualizada!');
+      } else if (tripId) {
         await activityService.create(tripId, data);
+        showToast('Atividade adicionada!');
       } else {
         addPendingActivity(data);
+        showToast('Atividade adicionada!');
       }
 
-      showToast('Atividade adicionada!');
       onSaved?.(data);
       onClose();
     } catch (error) {
@@ -120,7 +142,7 @@ export function ActivityFormModal({
             ]}>
             <View style={styles.header}>
               <ThemedText type="subtitle" style={styles.title}>
-                Nova atividade
+                {isEditing ? 'Editar atividade' : 'Nova atividade'}
               </ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.description}>
                 Informe categoria, horários e custos para montar o roteiro.
@@ -204,7 +226,7 @@ export function ActivityFormModal({
                 style={styles.footerButton}
               />
               <Button
-                label="Salvar Atividade"
+                label={isEditing ? 'Salvar alterações' : 'Salvar Atividade'}
                 loading={isBusy}
                 disabled={isBusy || loadingCategories}
                 onPress={() => void onSubmit()}

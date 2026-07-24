@@ -1,8 +1,15 @@
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { TripCard } from '@/components/trips/trip-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
@@ -14,9 +21,11 @@ import {
   TYPOGRAPHY,
 } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useTrips } from '@/hooks/use-trips';
 
 export default function ViagensScreen() {
   const theme = useTheme();
+  const { trips, loading } = useTrips();
 
   return (
     <ThemedView style={styles.container}>
@@ -42,11 +51,38 @@ export default function ViagensScreen() {
           </Pressable>
         </ThemedView>
 
-        <ThemedView style={styles.content}>
-          <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-            Nenhuma viagem ainda. Toque em + para cadastrar.
-          </ThemedText>
-        </ThemedView>
+        {loading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator color={theme.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={trips}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={[
+              styles.listContent,
+              trips.length === 0 && styles.listEmpty,
+            ]}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            renderItem={({ item }) => (
+              <TripCard
+                trip={item}
+                onPress={(tripId) =>
+                  router.push({
+                    pathname: '/viagem/[id]',
+                    params: { id: tripId },
+                  })
+                }
+              />
+            )}
+            ListEmptyComponent={
+              <ThemedText themeColor="textSecondary" style={styles.emptyText}>
+                Nenhuma viagem ainda. Toque em + para cadastrar.
+              </ThemedText>
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        )}
       </SafeAreaView>
     </ThemedView>
   );
@@ -78,13 +114,24 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: OPACITY.pressed,
   },
-  content: {
+  centered: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listContent: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
+    paddingBottom: SPACING.xl,
+  },
+  listEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  separator: {
+    height: SPACING.md,
   },
   emptyText: {
     textAlign: 'center',
-    marginTop: SPACING.xl,
   },
 });

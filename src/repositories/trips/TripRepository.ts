@@ -1,8 +1,14 @@
+import { Q } from '@nozbe/watermelondb';
+
 import { getDatabase } from '@/database/client';
 import type Activity from '@/database/models/Activity';
 import type Trip from '@/database/models/Trip';
 import { toRepositoryError } from '@/repositories/errors';
-import type { InsertActivityRecord, InsertTripRecord } from '@/repositories/types';
+import type {
+  InsertActivityRecord,
+  InsertTripRecord,
+  UpdateTripRecord,
+} from '@/repositories/types';
 
 function mapTripRecord(trip: Trip, record: InsertTripRecord): void {
   trip._raw.id = record.id;
@@ -52,10 +58,6 @@ export class TripRepository {
     }
   }
 
-  /**
-   * Insere viagem e atividades na mesma transação local.
-   * Isola a atomicidade do WatermelonDB nesta camada.
-   */
   async insertWithActivities(
     tripRecord: InsertTripRecord,
     activityRecords: InsertActivityRecord[],
@@ -83,6 +85,28 @@ export class TripRepository {
     }
   }
 
+  async update(tripId: string, record: UpdateTripRecord): Promise<Trip> {
+    try {
+      const database = getDatabase();
+      const trip = await database.get<Trip>('trips').find(tripId);
+
+      await database.write(async () => {
+        await trip.update((item) => {
+          item.title = record.title;
+          item.description = record.description;
+          item.travelers = record.travelers;
+          item.startDate = record.startDate;
+          item.endDate = record.endDate;
+          item.totalBudget = record.totalBudget;
+        });
+      });
+
+      return trip;
+    } catch (error) {
+      throw toRepositoryError(error, 'Falha ao atualizar a viagem no banco local');
+    }
+  }
+
   async updateTotalBudget(tripId: string, totalBudget: number): Promise<Trip> {
     try {
       const database = getDatabase();
@@ -97,6 +121,27 @@ export class TripRepository {
       return trip;
     } catch (error) {
       throw toRepositoryError(error, 'Falha ao atualizar o custo da viagem no banco local');
+    }
+  }
+
+  /** Remove a viagem e todas as atividades vinculadas na mesma transação. */
+  async deleteWithActivities(tripId: string): Promise<void> {
+    try {
+      const database = getDatabase();
+      const trip = await database.get<Trip>('trips').find(tripId);
+      const activities = await database
+        .get<Activity>('activities')
+        .query(Q.where('trip_id', tripId))
+        .fetch();
+
+      await database.write(async () => {
+        for (const activity of activities) {
+          await activity.destroyPermanently();
+        }
+        await trip.destroyPermanently();
+      });
+    } catch (error) {
+      throw toRepositoryError(error, 'Falha ao excluir a viagem no banco local');
     }
   }
 }
