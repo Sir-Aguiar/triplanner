@@ -1,6 +1,6 @@
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -26,9 +26,8 @@ import {
   SPACING,
   TYPOGRAPHY,
 } from '@/constants/theme';
-import { getDatabase } from '@/database';
-import type Trip from '@/database/models/Trip';
 import { useTheme } from '@/hooks/use-theme';
+import { useTrip } from '@/hooks/use-trip';
 import { useTripActivities } from '@/hooks/use-trip-activities';
 import { activityService, tripService } from '@/services';
 import { formatCurrencyBrl } from '@/utils/currency';
@@ -39,43 +38,14 @@ export default function ViagemDetalhesScreen() {
   const { showToast } = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const tripId = typeof id === 'string' ? id : id?.[0];
+  const { trip, loading, error } = useTrip(tripId);
   const { activities, loading: loadingActivities, spentTotal, costPerPerson } =
     useTripActivities(tripId);
 
-  const [trip, setTrip] = useState<Trip | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<ActivityListItem | null>(null);
   const [tripModalOpen, setTripModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (!tripId) {
-      setError('Viagem não encontrada.');
-      setLoading(false);
-      return;
-    }
-
-    const database = getDatabase();
-    const subscription = database
-      .get<Trip>('trips')
-      .findAndObserve(tripId)
-      .subscribe({
-        next: (record) => {
-          setTrip(record);
-          setLoading(false);
-          setError(null);
-        },
-        error: () => {
-          setTrip(null);
-          setLoading(false);
-          setError('Não foi possível carregar esta viagem.');
-        },
-      });
-
-    return () => subscription.unsubscribe();
-  }, [tripId]);
 
   const confirmDeleteTrip = () => {
     Alert.alert(

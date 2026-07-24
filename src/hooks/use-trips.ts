@@ -14,6 +14,15 @@ export type TripListItem = {
   totalBudget: number;
 };
 
+const TRIP_OBSERVED_COLUMNS = [
+  'title',
+  'description',
+  'travelers',
+  'start_date',
+  'end_date',
+  'total_budget',
+] as const;
+
 export function useTrips(): {
   trips: TripListItem[];
   loading: boolean;
@@ -26,7 +35,7 @@ export function useTrips(): {
     const subscription = database
       .get<Trip>('trips')
       .query(Q.sortBy('start_date', Q.asc))
-      .observe()
+      .observeWithColumns([...TRIP_OBSERVED_COLUMNS])
       .subscribe({
         next: (records) => {
           setTrips(
