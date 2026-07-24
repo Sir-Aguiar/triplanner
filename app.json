@@ -38,7 +38,9 @@
           "android": {
             "newArchEnabled": false,
             "packagingOptions": {
-              "pickFirst": ["**/libc++_shared.so"]
+              "pickFirst": [
+                "**/libc++_shared.so"
+              ]
             }
           },
           "ios": {
@@ -51,7 +53,8 @@
         {
           "disableJsi": true
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

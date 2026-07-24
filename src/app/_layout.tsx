@@ -6,6 +6,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { DatabaseLoadingScreen } from '@/components/database-loading-screen';
+import { ToastProvider } from '@/components/ui/toast';
 import { Colors } from '@/constants/theme';
 import { getDatabase, initializeDatabase } from '@/database';
 
@@ -70,17 +71,26 @@ export default function RootLayout() {
         />
       ) : (
         <DatabaseProvider database={getDatabase()}>
-          <AnimatedSplashOverlay />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="nova-viagem"
-              options={{
-                headerShown: true,
-                title: 'Cadastrar viagem',
-              }}
-            />
-          </Stack>
+          <ToastProvider>
+            <AnimatedSplashOverlay />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="nova-viagem"
+                options={{
+                  headerShown: true,
+                  title: 'Cadastrar viagem',
+                }}
+              />
+              <Stack.Screen
+                name="viagem/[id]"
+                options={{
+                  headerShown: true,
+                  title: 'Detalhes da viagem',
+                }}
+              />
+            </Stack>
+          </ToastProvider>
         </DatabaseProvider>
       )}
     </ThemeProvider>
