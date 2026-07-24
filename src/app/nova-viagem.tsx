@@ -42,7 +42,7 @@ import {
 import { usePendingActivities } from '@/hooks/use-pending-activities';
 import { mapPendingWithCategories } from '@/hooks/use-trip-activities';
 import { useTheme } from '@/hooks/use-theme';
-import { createTrip } from '@/services/trips/createTrip';
+import { tripService } from '@/services';
 import {
   clearPendingActivities,
   removePendingActivity,
@@ -142,7 +142,7 @@ export default function NovaViagemScreen() {
 
     setSubmitting(true);
     try {
-      const trip = await createTrip(data);
+      const trip = await tripService.create(data);
       showToast('Viagem criada!');
       router.replace({
         pathname: '/viagem/[id]',

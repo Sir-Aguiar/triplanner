@@ -32,7 +32,7 @@ import {
 } from '@/dtos';
 import { useCategories } from '@/hooks/use-categories';
 import { useTheme } from '@/hooks/use-theme';
-import { createActivity } from '@/services/activities/createActivity';
+import { activityService } from '@/services';
 import { addPendingActivity } from '@/stores/pending-activities';
 import { fromUtcIsoDate } from '@/utils/dates';
 
@@ -83,7 +83,7 @@ export function ActivityFormModal({
     setSubmitting(true);
     try {
       if (tripId) {
-        await createActivity(tripId, data);
+        await activityService.create(tripId, data);
       } else {
         addPendingActivity(data);
       }

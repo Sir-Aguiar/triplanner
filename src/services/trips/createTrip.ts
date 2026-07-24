@@ -1,12 +1,9 @@
-import type { CreateActivityDTO, CreateTripDTO } from '@/dtos';
-import { getDatabase } from '@/database/client';
-import type Activity from '@/database/models/Activity';
-import type Trip from '@/database/models/Trip';
-import { createUuidV4 } from '@/database/uuid';
-import {
-  clearPendingActivities,
-  getPendingActivities,
-} from '@/stores/pending-activities';
+import type { CreateActivityDTO, CreateTripDTO } from "@/dtos";
+import { getDatabase } from "@/database/client";
+import type Activity from "@/database/models/Activity";
+import type Trip from "@/database/models/Trip";
+import { createUuidV4 } from "@/database/uuid";
+import { clearPendingActivities, getPendingActivities } from "@/stores/pending-activities";
 
 function resolveEndTime(data: CreateActivityDTO): string {
   return data.endTime || data.startTime;
@@ -18,8 +15,8 @@ function resolveEndTime(data: CreateActivityDTO): string {
  */
 export async function createTrip(data: CreateTripDTO): Promise<Trip> {
   const database = getDatabase();
-  const trips = database.get<Trip>('trips');
-  const activities = database.get<Activity>('activities');
+  const trips = database.get<Trip>("trips");
+  const activities = database.get<Activity>("activities");
   const tripId = createUuidV4();
   const pending = getPendingActivities();
 
@@ -31,7 +28,7 @@ export async function createTrip(data: CreateTripDTO): Promise<Trip> {
       record.travelers = data.travelers;
       record.startDate = data.startDate;
       record.endDate = data.endDate;
-      record.coverImage = '';
+      record.coverImage = "";
       record.totalBudget = data.totalBudget;
       record.isPublic = false;
     });
@@ -39,8 +36,8 @@ export async function createTrip(data: CreateTripDTO): Promise<Trip> {
     for (const item of pending) {
       await activities.create((activity) => {
         activity._raw.id = createUuidV4();
-        activity._setRaw('trip_id', tripId);
-        activity._setRaw('category_id', item.categoryId);
+        activity._setRaw("trip_id", tripId);
+        activity._setRaw("category_id", item.categoryId);
         activity.title = item.title;
         activity.notes = item.notes || null;
         activity.startTime = item.startTime;
@@ -56,3 +53,4 @@ export async function createTrip(data: CreateTripDTO): Promise<Trip> {
   clearPendingActivities();
   return trip;
 }
+
