@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import {
   KeyboardAvoidingView,
@@ -21,6 +21,7 @@ import {
   FormTextInput,
 } from '@/components/form';
 import { ActivityFormModal } from '@/components/trips/activity-form-modal';
+import { ActivityTimeline, type ActivityListItem } from '@/components/trips/activity-timeline';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
@@ -34,31 +35,105 @@ import {
 import {
   createTripDefaultValues,
   createTripSchema,
+  type CreateActivityDTO,
   type CreateTripDTO,
   type CreateTripFormValues,
 } from '@/dtos';
+import { usePendingActivities } from '@/hooks/use-pending-activities';
+import { mapPendingWithCategories } from '@/hooks/use-trip-activities';
 import { useTheme } from '@/hooks/use-theme';
 import { createTrip } from '@/services/trips/createTrip';
+import {
+  clearPendingActivities,
+  removePendingActivity,
+} from '@/stores/pending-activities';
+import {
+  applyActivityCostToBudget,
+  applyActivityRemovalFromBudget,
+  sumActivityCosts,
+} from '@/utils/budget';
+import { formatCurrencyBrl } from '@/utils/currency';
 import { fromUtcIsoDate } from '@/utils/dates';
 
 export default function NovaViagemScreen() {
   const theme = useTheme();
   const { showToast } = useToast();
+  const pending = usePendingActivities();
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingItems, setPendingItems] = useState<ActivityListItem[]>([]);
+
+  const activitiesCostSum = useMemo(() => sumActivityCosts(pending), [pending]);
+  const minBudgetRef = useRef(activitiesCostSum);
+  minBudgetRef.current = activitiesCostSum;
+
+  const dynamicResolver = useMemo(
+    () => async (values: CreateTripFormValues, context: unknown, options: unknown) => {
+      const schema = createTripSchema({ minBudget: minBudgetRef.current });
+      // @ts-expect-error — assinatura compatível com zodResolver em runtime
+      return zodResolver(schema)(values, context, options);
+    },
+    [],
+  );
 
   const {
     control,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { isSubmitting },
   } = useForm<CreateTripFormValues, unknown, CreateTripDTO>({
-    resolver: zodResolver(createTripSchema),
+    resolver: dynamicResolver,
     defaultValues: createTripDefaultValues,
     mode: 'onSubmit',
   });
 
   const startDate = useWatch({ control, name: 'startDate' });
   const isBusy = submitting || isSubmitting;
+
+  useEffect(() => {
+    clearPendingActivities();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void mapPendingWithCategories(pending).then((items) => {
+      if (!cancelled) {
+        setPendingItems(items);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pending]);
+
+  const handleActivitySaved = (data: CreateActivityDTO) => {
+    const nextSum = activitiesCostSum + data.cost;
+    const nextBudget = applyActivityCostToBudget(getValues('totalBudget'), data.cost, nextSum);
+    setValue('totalBudget', nextBudget, { shouldDirty: true, shouldValidate: true });
+  };
+
+  const handleDeletePendingActivity = (tempId: string) => {
+    const removed = pending.find((item) => item.tempId === tempId);
+    if (!removed) {
+      return;
+    }
+
+    removePendingActivity(tempId);
+    const nextSum = activitiesCostSum - removed.cost;
+    const nextBudget = applyActivityRemovalFromBudget(
+      getValues('totalBudget'),
+      removed.cost,
+      nextSum,
+    );
+    setValue('totalBudget', nextBudget > 0 ? nextBudget : null, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    showToast('Atividade removida');
+  };
 
   const onSubmit = handleSubmit(async (data) => {
     if (isBusy) {
@@ -80,6 +155,11 @@ export default function NovaViagemScreen() {
       setSubmitting(false);
     }
   });
+
+  const budgetTooltip =
+    activitiesCostSum > 0
+      ? `O custo mínimo é ${formatCurrencyBrl(activitiesCostSum)} (soma das atividades). Você pode informar um valor maior.`
+      : 'Este campo não precisa ser preenchido. O custo será calculado conforme você cadastrar atividades.';
 
   return (
     <ThemedView style={styles.container}>
@@ -136,9 +216,14 @@ export default function NovaViagemScreen() {
                 control={control}
                 name="totalBudget"
                 label="Custo Total Previsto"
-                allowEmpty
+                allowEmpty={activitiesCostSum === 0}
                 placeholder="R$ 0,00"
-                tooltip="Este campo não precisa ser preenchido. O custo será calculado conforme você cadastrar atividades."
+                tooltip={budgetTooltip}
+                hint={
+                  activitiesCostSum > 0
+                    ? `Mínimo: ${formatCurrencyBrl(activitiesCostSum)}`
+                    : undefined
+                }
               />
 
               <FormTextArea
@@ -158,9 +243,17 @@ export default function NovaViagemScreen() {
               <View style={styles.activityCopy}>
                 <ThemedText type="smallBold">Atividades</ThemedText>
                 <ThemedText themeColor="textSecondary" type="small">
-                  Cadastre paradas e passeios desta viagem.
+                  {pending.length > 0
+                    ? `${pending.length} atividade(s) pronta(s) para salvar com a viagem.`
+                    : 'Cadastre paradas e passeios desta viagem.'}
                 </ThemedText>
               </View>
+
+              <ActivityTimeline
+                activities={pendingItems}
+                emptyMessage="Nenhuma atividade na fila ainda."
+                onDelete={handleDeletePendingActivity}
+              />
 
               <Pressable
                 accessibilityRole="button"
@@ -198,6 +291,7 @@ export default function NovaViagemScreen() {
       <ActivityFormModal
         visible={activityModalOpen}
         onClose={() => setActivityModalOpen(false)}
+        onSaved={handleActivitySaved}
       />
     </ThemedView>
   );
