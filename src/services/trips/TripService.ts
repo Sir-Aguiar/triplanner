@@ -20,7 +20,7 @@ import {
   getPendingActivities,
   type PendingActivity,
 } from '@/stores/pending-activities';
-import { applyTravelersChangeToBudget, sumActivityCosts } from '@/utils/budget';
+import { sumActivityCosts, syncBudgetWithSpent } from '@/utils/budget';
 
 function resolveEndTime(startTime: string, endTime: string): string {
   return endTime || startTime;
@@ -102,17 +102,9 @@ export class TripService {
         throw new ServiceError('Atualização remota de viagem ainda não está disponível.');
       }
 
-      const trip = await this.tripRepository.findById(tripId);
       const activities = await this.activityRepository.findByTripId(tripId);
-      const previousSum = sumActivityCosts(activities, trip.travelers);
       const nextSum = sumActivityCosts(activities, data.travelers);
-
-      const budgetAfterTravelers = applyTravelersChangeToBudget(
-        data.totalBudget,
-        previousSum,
-        nextSum,
-      );
-      const nextBudget = Math.max(budgetAfterTravelers, nextSum);
+      const nextBudget = syncBudgetWithSpent(data.totalBudget, nextSum);
 
       return await this.tripRepository.update(
         tripId,

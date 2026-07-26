@@ -62,41 +62,104 @@ export function sumActivityCostsPerPerson(
 }
 
 /**
- * Ao adicionar/alterar uma atividade, o custo da viagem sobe pela contribuição efetiva,
- * sem nunca ficar abaixo da soma das atividades.
+ * Mantém o orçamento previsto (`totalBudget`) coerente com o gasto realizado.
+ * - US02: se ainda há folga, o previsto não muda.
+ * - US03: se o gasto estoura o previsto, o previsto sobe para o novo total.
  */
-export function applyActivityCostToBudget(
+export function syncBudgetWithSpent(
   currentBudget: number | null | undefined,
-  activityContribution: number,
-  activitiesSumAfterChange: number,
+  spentTotal: number,
 ): number {
-  const base = currentBudget ?? 0;
-  return Math.max(base + activityContribution, activitiesSumAfterChange);
+  return Math.max(currentBudget ?? 0, spentTotal);
 }
 
 /**
- * Ao remover uma atividade, reduz o custo da viagem pela contribuição efetiva removida,
- * mantendo o piso da soma restante.
+ * No formulário de criação: se o orçamento estava colado na soma das atividades,
+ * continua acompanhando (inclusive para baixo). Caso contrário, só sobe no estouro (US03).
  */
-export function applyActivityRemovalFromBudget(
+export function reconcileFormBudget(
   currentBudget: number | null | undefined,
-  removedContribution: number,
-  activitiesSumAfterRemove: number,
+  previousSpent: number,
+  nextSpent: number,
 ): number {
   const base = currentBudget ?? 0;
-  return Math.max(base - removedContribution, activitiesSumAfterRemove);
+  if (base === previousSpent) {
+    return nextSpent;
+  }
+  return Math.max(base, nextSpent);
 }
 
-/**
- * Ajusta o orçamento quando muda a quantidade de viajantes
- * (atividades por pessoa alteram a soma efetiva).
- */
-export function applyTravelersChangeToBudget(
-  currentBudget: number | null | undefined,
-  previousSum: number,
-  nextSum: number,
-): number {
-  const base = currentBudget ?? 0;
-  const delta = nextSum - previousSum;
-  return Math.max(base + delta, nextSum);
+export type BudgetProgress = {
+  planned: number;
+  spent: number;
+  remaining: number;
+  /** US02: exibe saldo. US03: oculto quando gasto >= previsto. */
+  showRemaining: boolean;
+  /** 0–1 para barra de progresso (limitado a 100%). */
+  progressRatio: number;
+};
+
+/** Consolida previsto vs realizado vs saldo (RF2 / US02 / US03). */
+export function resolveBudgetProgress(
+  plannedBudget: number | null | undefined,
+  spentTotal: number,
+): BudgetProgress {
+  const planned = Math.max(0, plannedBudget ?? 0);
+  const spent = Math.max(0, spentTotal);
+  const remaining = planned - spent;
+
+  return {
+    planned,
+    spent,
+    remaining: Math.max(0, remaining),
+    showRemaining: planned > 0 && spent < planned,
+    progressRatio: planned > 0 ? Math.min(1, spent / planned) : spent > 0 ? 1 : 0,
+  };
+}
+
+export type CategoryCostBreakdownItem = {
+  categoryId: string;
+  categoryName: string;
+  categoryColor?: string | null;
+  categoryIcon?: string | null;
+  total: number;
+};
+
+type ActivityCategoryCostInput = {
+  categoryId?: string;
+  categoryName?: string;
+  categoryColor?: string | null;
+  categoryIcon?: string | null;
+  effectiveCost?: number | null;
+};
+
+/** Agrupa gastos realizados por categoria (maior → menor). */
+export function buildCategoryCostBreakdown(
+  activities: ActivityCategoryCostInput[],
+): CategoryCostBreakdownItem[] {
+  const byCategory = new Map<string, CategoryCostBreakdownItem>();
+
+  for (const activity of activities) {
+    const total = activity.effectiveCost ?? 0;
+    if (total <= 0) {
+      continue;
+    }
+
+    const categoryId = activity.categoryId ?? 'unknown';
+    const existing = byCategory.get(categoryId);
+    if (existing) {
+      existing.total += total;
+      continue;
+    }
+
+    byCategory.set(categoryId, {
+      categoryId,
+      categoryName: activity.categoryName?.trim() || 'Sem categoria',
+      categoryColor: activity.categoryColor,
+      categoryIcon: activity.categoryIcon,
+      total,
+    });
+  }
+
+  return [...byCategory.values()].sort((a, b) => b.total - a.total);
 }

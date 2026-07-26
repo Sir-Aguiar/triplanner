@@ -14,11 +14,7 @@ import {
   DEFAULT_PERSISTENCE_MODE,
   type PersistenceMode,
 } from '@/services/persistence';
-import {
-  applyActivityCostToBudget,
-  applyActivityRemovalFromBudget,
-  resolveActivityTotalCost,
-} from '@/utils/budget';
+import { resolveActivityTotalCost, syncBudgetWithSpent } from '@/utils/budget';
 
 function resolveEndTime(startTime: string, endTime: string): string {
   return endTime || startTime;
@@ -94,10 +90,7 @@ export class ActivityService {
       const oldContribution = resolveActivityTotalCost(activity, travelers);
       const newContribution = resolveActivityTotalCost(data, travelers);
       const nextSum = currentSum - oldContribution + newContribution;
-      const nextBudget = Math.max(
-        (trip.totalBudget ?? 0) - oldContribution + newContribution,
-        nextSum,
-      );
+      const nextBudget = syncBudgetWithSpent(trip.totalBudget, nextSum);
 
       return await this.activityRepository.updateAndSyncTripBudget(
         activityId,
@@ -124,11 +117,7 @@ export class ActivityService {
       const currentSum = await this.activityRepository.sumCostsByTripId(tripId, travelers);
       const contribution = resolveActivityTotalCost(activity, travelers);
       const nextSum = currentSum - contribution;
-      const nextBudget = applyActivityRemovalFromBudget(
-        trip.totalBudget,
-        contribution,
-        nextSum,
-      );
+      const nextBudget = syncBudgetWithSpent(trip.totalBudget, nextSum);
 
       await this.activityRepository.deleteAndSyncTripBudget(activityId, nextBudget);
     } catch (error) {
@@ -143,7 +132,7 @@ export class ActivityService {
         tripId,
         trip.travelers,
       );
-      const nextBudget = Math.max(trip.totalBudget, activitiesSum);
+      const nextBudget = syncBudgetWithSpent(trip.totalBudget, activitiesSum);
 
       if (nextBudget !== trip.totalBudget) {
         await this.tripRepository.updateTotalBudget(tripId, nextBudget);
@@ -161,7 +150,7 @@ export class ActivityService {
     const currentSum = await this.activityRepository.sumCostsByTripId(tripId, travelers);
     const contribution = resolveActivityTotalCost(data, travelers);
     const nextSum = currentSum + contribution;
-    const nextBudget = applyActivityCostToBudget(trip.totalBudget, contribution, nextSum);
+    const nextBudget = syncBudgetWithSpent(trip.totalBudget, nextSum);
     const record = toActivityRecord(tripId, data);
 
     return this.activityRepository.insertAndUpdateTripBudget(record, nextBudget);

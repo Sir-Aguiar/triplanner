@@ -46,10 +46,7 @@ import {
   clearPendingActivities,
   removePendingActivity,
 } from '@/stores/pending-activities';
-import {
-  applyTravelersChangeToBudget,
-  sumActivityCosts,
-} from '@/utils/budget';
+import { reconcileFormBudget, sumActivityCosts } from '@/utils/budget';
 import { formatCurrencyBrl } from '@/utils/currency';
 import { fromUtcIsoDate } from '@/utils/dates';
 
@@ -136,7 +133,7 @@ export default function NovaViagemScreen() {
       return;
     }
 
-    const nextBudget = applyTravelersChangeToBudget(
+    const nextBudget = reconcileFormBudget(
       getValues('totalBudget'),
       previousSum,
       activitiesCostSum,

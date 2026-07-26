@@ -6,7 +6,12 @@ import { getDatabase } from '@/database';
 import type Activity from '@/database/models/Activity';
 import type Category from '@/database/models/Category';
 import type Trip from '@/database/models/Trip';
-import { resolveActivityTotalCost, sumActivityCostsPerPerson } from '@/utils/budget';
+import {
+  buildCategoryCostBreakdown,
+  resolveActivityTotalCost,
+  sumActivityCostsPerPerson,
+  type CategoryCostBreakdownItem,
+} from '@/utils/budget';
 
 const ACTIVITY_OBSERVED_COLUMNS = [
   'title',
@@ -67,10 +72,12 @@ export function useTripActivities(tripId?: string): {
   loading: boolean;
   spentTotal: number;
   costPerPerson: number;
+  categoryBreakdown: CategoryCostBreakdownItem[];
 } {
   const [activities, setActivities] = useState<ActivityListItem[]>([]);
   const [spentTotal, setSpentTotal] = useState(0);
   const [costPerPerson, setCostPerPerson] = useState(0);
+  const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryCostBreakdownItem[]>([]);
   const [loading, setLoading] = useState(Boolean(tripId));
 
   useEffect(() => {
@@ -78,6 +85,7 @@ export function useTripActivities(tripId?: string): {
       setActivities([]);
       setSpentTotal(0);
       setCostPerPerson(0);
+      setCategoryBreakdown([]);
       setLoading(false);
       return;
     }
@@ -97,6 +105,7 @@ export function useTripActivities(tripId?: string): {
         setActivities(items);
         setSpentTotal(items.reduce((sum, item) => sum + (item.effectiveCost ?? 0), 0));
         setCostPerPerson(sumActivityCostsPerPerson(items, travelers));
+        setCategoryBreakdown(buildCategoryCostBreakdown(items));
         setLoading(false);
       } catch {
         if (cancelled) {
@@ -105,6 +114,7 @@ export function useTripActivities(tripId?: string): {
         setActivities([]);
         setSpentTotal(0);
         setCostPerPerson(0);
+        setCategoryBreakdown([]);
         setLoading(false);
       }
     };
@@ -141,6 +151,7 @@ export function useTripActivities(tripId?: string): {
           setActivities([]);
           setSpentTotal(0);
           setCostPerPerson(0);
+          setCategoryBreakdown([]);
           setLoading(false);
         },
       });
@@ -152,7 +163,7 @@ export function useTripActivities(tripId?: string): {
     };
   }, [tripId]);
 
-  return { activities, loading, spentTotal, costPerPerson };
+  return { activities, loading, spentTotal, costPerPerson, categoryBreakdown };
 }
 
 /** Resolve nomes de categorias para itens pendentes (cache). */

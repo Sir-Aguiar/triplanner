@@ -16,6 +16,7 @@ import {
   ActivityTimeline,
   type ActivityListItem,
 } from '@/components/trips/activity-timeline';
+import { BudgetSummary } from '@/components/trips/budget-summary';
 import { TripFormModal } from '@/components/trips/trip-form-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -30,7 +31,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTrip } from '@/hooks/use-trip';
 import { useTripActivities } from '@/hooks/use-trip-activities';
 import { activityService, tripService } from '@/services';
-import { formatCurrencyBrl } from '@/utils/currency';
 import { formatDatePtBr } from '@/utils/dates';
 
 export default function ViagemDetalhesScreen() {
@@ -39,8 +39,13 @@ export default function ViagemDetalhesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const tripId = typeof id === 'string' ? id : id?.[0];
   const { trip, loading, error } = useTrip(tripId);
-  const { activities, loading: loadingActivities, spentTotal, costPerPerson } =
-    useTripActivities(tripId);
+  const {
+    activities,
+    loading: loadingActivities,
+    spentTotal,
+    costPerPerson,
+    categoryBreakdown,
+  } = useTripActivities(tripId);
 
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<ActivityListItem | null>(null);
@@ -145,17 +150,12 @@ export default function ViagemDetalhesScreen() {
               </View>
 
               <View style={styles.section}>
-                <ThemedText type="smallBold">Custo total da viagem</ThemedText>
-                <ThemedText themeColor="textSecondary">
-                  {trip.totalBudget > 0 ? formatCurrencyBrl(trip.totalBudget) : 'Não informado'}
-                </ThemedText>
-              </View>
-
-              <View style={styles.section}>
-                <ThemedText type="smallBold">Custo por pessoa</ThemedText>
-                <ThemedText themeColor="textSecondary">
-                  {costPerPerson > 0 ? formatCurrencyBrl(costPerPerson) : 'Não informado'}
-                </ThemedText>
+                <BudgetSummary
+                  totalBudget={trip.totalBudget}
+                  spentTotal={spentTotal}
+                  costPerPerson={costPerPerson}
+                  categoryBreakdown={categoryBreakdown}
+                />
               </View>
 
               <View style={styles.actionsRow}>
