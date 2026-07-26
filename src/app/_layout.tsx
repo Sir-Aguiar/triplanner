@@ -1,16 +1,28 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, type Theme } from 'expo-router';
 import { DatabaseProvider } from '@nozbe/watermelondb/react';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+  router,
+  type Theme,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { DatabaseLoadingScreen } from '@/components/database-loading-screen';
 import { ToastProvider } from '@/components/ui/toast';
 import { Colors } from '@/constants/theme';
+import { SessionProvider, useSession } from '@/contexts/session';
 import { getDatabase, initializeDatabase } from '@/database';
 
 SplashScreen.preventAutoHideAsync();
+
+export const unstable_settings = {
+  anchor: '(tabs)',
+};
 
 type InitStatus = 'loading' | 'ready' | 'error';
 
@@ -32,6 +44,84 @@ function createNavigationTheme(scheme: 'light' | 'dark'): Theme {
   };
 }
 
+function RootNavigator() {
+  const { isLoggedIn, isLoading: isSessionLoading, hasDismissedWelcome } = useSession();
+  const didPresentWelcome = useRef(false);
+
+  useEffect(() => {
+    if (isSessionLoading || isLoggedIn || hasDismissedWelcome) {
+      if (hasDismissedWelcome || isLoggedIn) {
+        didPresentWelcome.current = false;
+      }
+      return;
+    }
+
+    if (didPresentWelcome.current) {
+      return;
+    }
+
+    didPresentWelcome.current = true;
+    router.push('/welcome');
+  }, [isSessionLoading, isLoggedIn, hasDismissedWelcome]);
+
+  if (isSessionLoading) {
+    return <DatabaseLoadingScreen />;
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="menu"
+        options={{
+          presentation: 'transparentModal',
+          animation: 'none',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="nova-viagem"
+        options={{
+          headerShown: true,
+          title: 'Cadastrar viagem',
+        }}
+      />
+      <Stack.Screen
+        name="viagem/[id]"
+        options={{
+          headerShown: true,
+          title: 'Detalhes da viagem',
+        }}
+      />
+      <Stack.Screen
+        name="welcome"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: 'fitToContents',
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 24,
+          gestureEnabled: false,
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="entrar"
+        options={{
+          headerShown: true,
+          title: 'Entrar',
+        }}
+      />
+      <Stack.Screen
+        name="criar-conta"
+        options={{
+          headerShown: true,
+          title: 'Criar Conta',
+        }}
+      />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const scheme = colorScheme === 'dark' ? 'dark' : 'light';
@@ -44,7 +134,6 @@ export default function RootLayout() {
     setErrorMessage(null);
 
     try {
-      // RN01: inicialização 100% local — sem rede e sem login.
       await initializeDatabase();
       setStatus('ready');
     } catch (error) {
@@ -57,7 +146,6 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    // Troca a splash nativa pela tela de loading enquanto o banco inicializa.
     SplashScreen.hideAsync().catch(() => undefined);
     bootstrap();
   }, [bootstrap]);
@@ -71,26 +159,12 @@ export default function RootLayout() {
         />
       ) : (
         <DatabaseProvider database={getDatabase()}>
-          <ToastProvider>
-            <AnimatedSplashOverlay />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen
-                name="nova-viagem"
-                options={{
-                  headerShown: true,
-                  title: 'Cadastrar viagem',
-                }}
-              />
-              <Stack.Screen
-                name="viagem/[id]"
-                options={{
-                  headerShown: true,
-                  title: 'Detalhes da viagem',
-                }}
-              />
-            </Stack>
-          </ToastProvider>
+          <SessionProvider>
+            <ToastProvider>
+              <AnimatedSplashOverlay />
+              <RootNavigator />
+            </ToastProvider>
+          </SessionProvider>
         </DatabaseProvider>
       )}
     </ThemeProvider>

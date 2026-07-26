@@ -29,7 +29,6 @@ export default function TabTwoScreen() {
   const contentPlatformStyle =
     Platform.OS === 'android'
       ? {
-          paddingTop: insets.top,
           paddingLeft: insets.left,
           paddingRight: insets.right,
           paddingBottom: insets.bottom,
