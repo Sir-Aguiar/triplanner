@@ -11,3 +11,19 @@ export {
   type CreateActivityDTO,
   type CreateActivityFormValues,
 } from './activity/CreateActivityDTO';
+
+export {
+  signUpDefaultValues,
+  signUpFormSchema,
+  toSignUpDTO,
+  type SignUpDTO,
+  type SignUpFormValues,
+} from './auth/SignUpDTO';
+
+export {
+  signInDefaultValues,
+  signInFormSchema,
+  toSignInDTO,
+  type SignInDTO,
+  type SignInFormValues,
+} from './auth/SignInDTO';

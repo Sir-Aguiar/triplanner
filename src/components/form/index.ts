@@ -6,3 +6,5 @@ export { FormCurrencyInput } from './FormCurrencyInput';
 export { FormDateInput } from './FormDateInput';
 export { FormSwitch } from './FormSwitch';
 export { FormCategorySelect } from './FormCategorySelect';
+export { FormPasswordInput } from './FormPasswordInput';
+export { FormCountryAutocomplete } from './FormCountryAutocomplete';

@@ -37,6 +37,7 @@
         {
           "android": {
             "newArchEnabled": false,
+            "usesCleartextTraffic": true,
             "packagingOptions": {
               "pickFirst": [
                 "**/libc++_shared.so"
