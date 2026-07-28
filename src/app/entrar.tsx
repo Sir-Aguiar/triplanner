@@ -54,7 +54,7 @@ export default function EntrarScreen() {
     setSubmitting(true);
     try {
       const result = await authService.signIn(toSignInDTO(values));
-      completeAuth(result);
+      await completeAuth(result);
       showToast('Login realizado!');
     } catch (error) {
       console.error('Falha ao entrar:', error);

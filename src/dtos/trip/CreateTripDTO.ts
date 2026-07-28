@@ -9,7 +9,7 @@ type CreateTripSchemaOptions = {
 
 /**
  * Schema do formulário de criação de viagem.
- * Campos de sistema (tripId, isPublic, coverImage, createdAt, updatedAt)
+ * Campos de sistema (tripId, isPublic, coverImage, userId, createdAt, updatedAt)
  * são preenchidos no serviço de persistência.
  */
 export function createTripSchema(options: CreateTripSchemaOptions = {}) {

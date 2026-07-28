@@ -7,7 +7,7 @@ import { appSchema, tableSchema } from '@nozbe/watermelondb';
  * Chaves (id, trip_id, category_id) são UUID v4 em string.
  */
 export const schema = appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({
       name: 'trips',
@@ -20,6 +20,8 @@ export const schema = appSchema({
         { name: 'cover_image', type: 'string' },
         { name: 'total_budget', type: 'number' },
         { name: 'is_public', type: 'boolean' },
+        /** Dono autenticado; `null` enquanto convidado (órfã até o claim no login). */
+        { name: 'user_id', type: 'string', isOptional: true, isIndexed: true },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
       ],

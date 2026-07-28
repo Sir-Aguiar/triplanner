@@ -32,6 +32,7 @@ import {
   SPACING,
   TYPOGRAPHY,
 } from '@/constants/theme';
+import { useSession } from '@/contexts/session';
 import {
   createTripDefaultValues,
   createTripSchema,
@@ -52,6 +53,7 @@ import { fromUtcIsoDate } from '@/utils/dates';
 
 export default function NovaViagemScreen() {
   const theme = useTheme();
+  const { user } = useSession();
   const { showToast } = useToast();
   const pending = usePendingActivities();
   const [activityModalOpen, setActivityModalOpen] = useState(false);
@@ -160,7 +162,7 @@ export default function NovaViagemScreen() {
 
     setSubmitting(true);
     try {
-      const trip = await tripService.create(data);
+      const trip = await tripService.create(data, { userId: user?.userId ?? null });
       showToast('Viagem criada!');
       router.replace({
         pathname: '/viagem/[id]',

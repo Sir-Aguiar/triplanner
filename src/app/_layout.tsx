@@ -17,6 +17,7 @@ import { ToastProvider } from '@/components/ui/toast';
 import { Colors } from '@/constants/theme';
 import { SessionProvider, useSession } from '@/contexts/session';
 import { getDatabase, initializeDatabase } from '@/database';
+import { useClaimOrphanTripsOnSession } from '@/hooks/use-claim-orphan-trips';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -47,6 +48,8 @@ function createNavigationTheme(scheme: 'light' | 'dark'): Theme {
 function RootNavigator() {
   const { isLoggedIn, isLoading: isSessionLoading, hasDismissedWelcome } = useSession();
   const didPresentWelcome = useRef(false);
+
+  useClaimOrphanTripsOnSession();
 
   useEffect(() => {
     if (isSessionLoading || isLoggedIn || hasDismissedWelcome) {

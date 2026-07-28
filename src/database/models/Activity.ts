@@ -24,6 +24,8 @@ export default class Activity extends Model {
   @text('end_time') endTime: string;
   @field('cost') cost: number;
   @field('is_per_person') isPerPerson: boolean;
+  /** Preenchido automaticamente pelo WatermelonDB em create (não setar manualmente). */
   @readonly @date('created_at') createdAt: Date;
+  /** Atualizado automaticamente pelo WatermelonDB em todo `.update()` (LWW / RN01). */
   @readonly @date('updated_at') updatedAt: Date;
 }

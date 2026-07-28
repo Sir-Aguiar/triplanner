@@ -26,7 +26,12 @@ function resolveEndTime(startTime: string, endTime: string): string {
   return endTime || startTime;
 }
 
-function toTripRecord(data: CreateTripDTO): InsertTripRecord {
+export type CreateTripOptions = {
+  /** ID do usuário autenticado; omitir/`null` em modo convidado. */
+  userId?: string | null;
+};
+
+function toTripRecord(data: CreateTripDTO, userId: string | null): InsertTripRecord {
   return {
     id: createUuidV4(),
     title: data.title,
@@ -37,6 +42,7 @@ function toTripRecord(data: CreateTripDTO): InsertTripRecord {
     coverImage: '',
     totalBudget: data.totalBudget,
     isPublic: false,
+    userId,
   };
 }
 
@@ -85,12 +91,12 @@ export class TripService {
     this.persistenceMode = deps.persistenceMode ?? DEFAULT_PERSISTENCE_MODE;
   }
 
-  async create(data: CreateTripDTO): Promise<Trip> {
+  async create(data: CreateTripDTO, options: CreateTripOptions = {}): Promise<Trip> {
     try {
       if (this.persistenceMode === 'api') {
         return await this.createRemote(data);
       }
-      return await this.createLocal(data);
+      return await this.createLocal(data, options.userId ?? null);
     } catch (error) {
       throw toServiceError(error, 'Não foi possível cadastrar a viagem');
     }
@@ -126,8 +132,20 @@ export class TripService {
     }
   }
 
-  private async createLocal(data: CreateTripDTO): Promise<Trip> {
-    const tripRecord = toTripRecord(data);
+  /**
+   * Vincula viagens órfãs (criadas como convidado) ao usuário autenticado.
+   * Idempotente — seguro chamar no login e na restauração de sessão.
+   */
+  async claimOrphanTrips(userId: string): Promise<number> {
+    try {
+      return await this.tripRepository.assignUserToOrphanTrips(userId);
+    } catch (error) {
+      throw toServiceError(error, 'Não foi possível vincular viagens locais à conta');
+    }
+  }
+
+  private async createLocal(data: CreateTripDTO, userId: string | null): Promise<Trip> {
+    const tripRecord = toTripRecord(data, userId);
     const pending = getPendingActivities();
     const activityRecords = pending.map((item) => toActivityRecord(tripRecord.id, item));
 

@@ -20,6 +20,7 @@ function mapTripRecord(trip: Trip, record: InsertTripRecord): void {
   trip.coverImage = record.coverImage;
   trip.totalBudget = record.totalBudget;
   trip.isPublic = record.isPublic;
+  trip.userId = record.userId;
 }
 
 function mapActivityRecord(activity: Activity, record: InsertActivityRecord): void {
@@ -142,6 +143,37 @@ export class TripRepository {
       });
     } catch (error) {
       throw toRepositoryError(error, 'Falha ao excluir a viagem no banco local');
+    }
+  }
+
+  /**
+   * Atribui `userId` às viagens órfãs (`user_id` nulo).
+   * Usado no login / restauração de sessão (RF04 + edge case "Manter").
+   * O `.update()` também renova `updated_at` (LWW).
+   */
+  async assignUserToOrphanTrips(userId: string): Promise<number> {
+    try {
+      const database = getDatabase();
+      const orphans = await database
+        .get<Trip>('trips')
+        .query(Q.where('user_id', null))
+        .fetch();
+
+      if (orphans.length === 0) {
+        return 0;
+      }
+
+      await database.write(async () => {
+        for (const trip of orphans) {
+          await trip.update((record) => {
+            record.userId = userId;
+          });
+        }
+      });
+
+      return orphans.length;
+    } catch (error) {
+      throw toRepositoryError(error, 'Falha ao atribuir dono às viagens locais');
     }
   }
 }

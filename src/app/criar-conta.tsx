@@ -59,7 +59,7 @@ export default function CriarContaScreen() {
     try {
       const result = await authService.signUp(toSignUpDTO(values));
       // Tokens já vêm no cadastro — autentica a sessão imediatamente.
-      completeAuth(result);
+      await completeAuth(result);
       showToast('Conta criada! Você já está logado.');
     } catch (error) {
       console.error('Falha ao criar conta:', error);

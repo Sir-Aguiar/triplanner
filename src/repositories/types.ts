@@ -9,6 +9,8 @@ export type InsertTripRecord = {
   coverImage: string;
   totalBudget: number;
   isPublic: boolean;
+  /** `null` em modo convidado; preenchido quando autenticado. */
+  userId: string | null;
 };
 
 /** Campos atualizáveis de uma viagem existente. */

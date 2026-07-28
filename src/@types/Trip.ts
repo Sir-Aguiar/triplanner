@@ -8,6 +8,8 @@ export interface ITrip {
   coverImage: string;
   totalBudget: number;
   isPublic: boolean;
+  /** Dono autenticado; `null` enquanto a viagem for órfã (convidado). */
+  userId: string | null;
   createdAt: string;
   updatedAt: string;
 }

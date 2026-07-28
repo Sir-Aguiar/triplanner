@@ -21,7 +21,11 @@ export default class Trip extends Model {
   @text('cover_image') coverImage: string;
   @field('total_budget') totalBudget: number;
   @field('is_public') isPublic: boolean;
+  /** ID do usuário autenticado; `null` em modo convidado. */
+  @text('user_id') userId: string | null;
+  /** Preenchido automaticamente pelo WatermelonDB em create (não setar manualmente). */
   @readonly @date('created_at') createdAt: Date;
+  /** Atualizado automaticamente pelo WatermelonDB em todo `.update()` (LWW / RN01). */
   @readonly @date('updated_at') updatedAt: Date;
 
   @children('activities') activities: Query<Activity>;
