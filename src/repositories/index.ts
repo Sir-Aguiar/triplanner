@@ -7,3 +7,5 @@ export type {
 } from './types';
 export { TripRepository, tripRepository } from './trips/TripRepository';
 export { ActivityRepository, activityRepository } from './activities/ActivityRepository';
+export { SyncRepository, syncRepository } from './sync/SyncRepository';
+export type { OwnedTripWithActivities } from './sync/SyncRepository';

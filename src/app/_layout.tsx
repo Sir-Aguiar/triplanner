@@ -1,14 +1,13 @@
-import { DatabaseProvider } from '@nozbe/watermelondb/react';
 import {
   DarkTheme,
   DefaultTheme,
   Stack,
   ThemeProvider,
-  router,
   type Theme,
 } from 'expo-router';
+import { DatabaseProvider } from '@nozbe/watermelondb/react';
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -17,7 +16,7 @@ import { ToastProvider } from '@/components/ui/toast';
 import { Colors } from '@/constants/theme';
 import { SessionProvider, useSession } from '@/contexts/session';
 import { getDatabase, initializeDatabase } from '@/database';
-import { useClaimOrphanTripsOnSession } from '@/hooks/use-claim-orphan-trips';
+import { useBackgroundSync } from '@/hooks/use-background-sync';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,32 +44,29 @@ function createNavigationTheme(scheme: 'light' | 'dark'): Theme {
   };
 }
 
-function RootNavigator() {
-  const { isLoggedIn, isLoading: isSessionLoading, hasDismissedWelcome } = useSession();
-  const didPresentWelcome = useRef(false);
+function AuthGateStack() {
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="welcome" />
+      <Stack.Screen
+        name="entrar"
+        options={{
+          headerShown: true,
+          title: 'Entrar',
+        }}
+      />
+      <Stack.Screen
+        name="criar-conta"
+        options={{
+          headerShown: true,
+          title: 'Criar Conta',
+        }}
+      />
+    </Stack>
+  );
+}
 
-  useClaimOrphanTripsOnSession();
-
-  useEffect(() => {
-    if (isSessionLoading || isLoggedIn || hasDismissedWelcome) {
-      if (hasDismissedWelcome || isLoggedIn) {
-        didPresentWelcome.current = false;
-      }
-      return;
-    }
-
-    if (didPresentWelcome.current) {
-      return;
-    }
-
-    didPresentWelcome.current = true;
-    router.push('/welcome');
-  }, [isSessionLoading, isLoggedIn, hasDismissedWelcome]);
-
-  if (isSessionLoading) {
-    return <DatabaseLoadingScreen />;
-  }
-
+function AppStack() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
@@ -123,6 +119,23 @@ function RootNavigator() {
       />
     </Stack>
   );
+}
+
+function RootNavigator() {
+  const { isLoggedIn, isLoading: isSessionLoading, hasDismissedWelcome } = useSession();
+  const canEnterApp = isLoggedIn || hasDismissedWelcome;
+
+  useBackgroundSync();
+
+  if (isSessionLoading) {
+    return <DatabaseLoadingScreen />;
+  }
+
+  if (!canEnterApp) {
+    return <AuthGateStack />;
+  }
+
+  return <AppStack />;
 }
 
 export default function RootLayout() {

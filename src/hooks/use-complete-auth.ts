@@ -5,8 +5,9 @@ import { useSession } from '@/contexts/session';
 import { tripService } from '@/services';
 
 /**
- * Persiste tokens + usuário da API, vincula viagens órfãs locais e navega
- * para a área autenticada do app.
+ * Persiste tokens + usuário da API, vincula viagens órfãs e vai para o Home.
+ * O `setTimeout` espera o gatekeeper remontar a AppStack (quando vinha do AuthGate)
+ * antes do replace para `/(tabs)`. O sync fica a cargo de `useBackgroundSync`.
  */
 export function useCompleteAuth() {
   const { signIn } = useSession();
@@ -20,10 +21,11 @@ export function useCompleteAuth() {
       user: auth.user,
     });
 
-    if (router.canDismiss()) {
-      router.dismissAll();
-    }
-
-    router.replace('/(tabs)');
+    setTimeout(() => {
+      if (router.canDismiss()) {
+        router.dismissAll();
+      }
+      router.replace('/(tabs)');
+    }, 0);
   };
 }

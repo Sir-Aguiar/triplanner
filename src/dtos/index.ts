@@ -27,3 +27,17 @@ export {
   type SignInDTO,
   type SignInFormValues,
 } from './auth/SignInDTO';
+
+export {
+  SYNC_COVER_IMAGE_PLACEHOLDER,
+  mapActivityToSyncDto,
+  mapLocalTripsToSyncPayload,
+  mapTripToSyncDto,
+  type LocalTripWithActivities,
+  type SyncActivityDto,
+  type SyncActivityResponseDto,
+  type SyncTripDto,
+  type SyncTripResponseDto,
+  type SyncTripsDto,
+  type SyncTripsResponseDto,
+} from './sync/SyncTripsDTO';

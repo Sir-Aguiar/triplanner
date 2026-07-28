@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useCallback, useEffect } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
@@ -17,6 +17,7 @@ import { useToast } from '@/components/ui/toast';
 import { BORDER_RADIUS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useSession } from '@/contexts/session';
 import { useTheme } from '@/hooks/use-theme';
+import { syncService } from '@/services';
 
 const PROFILE_BLURB = 'Planeje suas viagens com facilidade e organize cada belo momento.';
 const SLIDE_MS = 280;
@@ -39,6 +40,7 @@ export default function MenuScreen() {
   const { isLoggedIn, user, signOut } = useSession();
   const { showToast } = useToast();
   const translateX = useSharedValue(width);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     translateX.value = width;
@@ -71,11 +73,61 @@ export default function MenuScreen() {
     );
   }, [finishDismiss, translateX, width]);
 
-  const handleSignOut = useCallback(() => {
+  const finishSignOut = useCallback(() => {
     signOut();
     showToast('Você saiu da conta.');
-    dismiss();
-  }, [dismiss, showToast, signOut]);
+  }, [showToast, signOut]);
+
+  const handleSignOut = useCallback(() => {
+    if (signingOut) {
+      return;
+    }
+
+    Alert.alert(
+      'Sair da conta',
+      'Deseja manter seus roteiros salvos neste dispositivo para uso offline ou apagar tudo por privacidade?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Manter Dados',
+          onPress: () => {
+            void (async () => {
+              setSigningOut(true);
+              try {
+                if (user?.userId) {
+                  await syncService.orphanLocalTrips(user.userId);
+                }
+                finishSignOut();
+              } catch (error) {
+                console.error('Falha ao manter dados no logoff:', error);
+                showToast('Não foi possível concluir a saída.');
+              } finally {
+                setSigningOut(false);
+              }
+            })();
+          },
+        },
+        {
+          text: 'Apagar Tudo',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              setSigningOut(true);
+              try {
+                await syncService.clearLocalTripData();
+                finishSignOut();
+              } catch (error) {
+                console.error('Falha ao apagar dados no logoff:', error);
+                showToast('Não foi possível apagar os dados locais.');
+              } finally {
+                setSigningOut(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  }, [finishSignOut, showToast, signingOut, user?.userId]);
 
   const panelStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -145,7 +197,12 @@ export default function MenuScreen() {
 
           {isLoggedIn ? (
             <View style={styles.footer}>
-              <Button label="Sair da conta" variant="secondary" onPress={handleSignOut} />
+              <Button
+                label="Sair da conta"
+                variant="secondary"
+                onPress={handleSignOut}
+                disabled={signingOut}
+              />
             </View>
           ) : null}
         </View>

@@ -12,19 +12,15 @@ export default function WelcomeModal() {
   const { continueAsGuest } = useSession();
   const insets = useSafeAreaInsets();
 
-  const dismissAsGuest = () => {
-    continueAsGuest();
-    if (router.canDismiss()) {
-      router.dismiss();
-    } else {
-      router.replace('/(tabs)');
-    }
-  };
-
   return (
-    <ThemedView type="surface" style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, SPACING.lg) }]}>
+    <ThemedView
+      type="surface"
+      style={[
+        styles.sheet,
+        { flex: 1, justifyContent: 'flex-end', paddingBottom: Math.max(insets.bottom, SPACING.lg) },
+      ]}>
       <View style={styles.actions}>
-        <Button label="Continuar como Convidado" onPress={dismissAsGuest} />
+        <Button label="Continuar como Convidado" onPress={continueAsGuest} />
         <Button label="Entrar" variant="secondary" onPress={() => router.push('/entrar')} />
         <Pressable
           accessibilityRole="link"
