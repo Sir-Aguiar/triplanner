@@ -9,14 +9,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AtmosphericBackground } from '@/components/atmospheric-background';
 import { TripCard } from '@/components/trips/trip-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
   BORDER_RADIUS,
   BottomTabInset,
-  COLORS,
   OPACITY,
+  SHADOWS,
   SPACING,
   TYPOGRAPHY,
 } from '@/constants/theme';
@@ -29,9 +30,17 @@ export default function ViagensScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <AtmosphericBackground />
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ThemedView style={styles.header}>
-          <ThemedText type="subtitle">Viagens</ThemedText>
+        <View style={styles.header}>
+          <View style={styles.headerCopy}>
+            <ThemedText type="subtitle">Viagens</ThemedText>
+            <ThemedText themeColor="textSecondary" type="small">
+              {trips.length === 0
+                ? 'Seus roteiros ficam aqui'
+                : `${trips.length} ${trips.length === 1 ? 'roteiro' : 'roteiros'}`}
+            </ThemedText>
+          </View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Cadastrar viagem"
@@ -39,17 +48,18 @@ export default function ViagensScreen() {
             onPress={() => router.push('/nova-viagem')}
             style={({ pressed }) => [
               styles.addButton,
+              SHADOWS.light,
               { backgroundColor: theme.accent },
               pressed && styles.pressed,
             ]}>
             <SymbolView
               name={{ ios: 'plus', android: 'add' }}
               size={TYPOGRAPHY.sizes.xl}
-              tintColor={COLORS.textInverse}
+              tintColor={theme.textInverse}
               weight="medium"
             />
           </Pressable>
-        </ThemedView>
+        </View>
 
         {loading ? (
           <View style={styles.centered}>
@@ -76,9 +86,24 @@ export default function ViagensScreen() {
               />
             )}
             ListEmptyComponent={
-              <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-                Nenhuma viagem ainda. Toque em + para cadastrar.
-              </ThemedText>
+              <View
+                style={[
+                  styles.emptyCard,
+                  { backgroundColor: theme.surface, borderColor: theme.border },
+                ]}>
+                <SymbolView
+                  name={{ ios: 'map', android: 'map', web: 'map' }}
+                  size={32}
+                  tintColor={theme.secondary}
+                  weight="medium"
+                />
+                <ThemedText type="smallBold" style={styles.emptyTitle}>
+                  Nenhuma viagem ainda
+                </ThemedText>
+                <ThemedText themeColor="textSecondary" style={styles.emptyText}>
+                  Toque no + para criar seu primeiro roteiro com datas, orçamento e atividades.
+                </ThemedText>
+              </View>
             }
             showsVerticalScrollIndicator={false}
           />
@@ -101,18 +126,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
+    paddingTop: SPACING.lg,
     paddingBottom: SPACING.sm,
   },
+  headerCopy: {
+    gap: SPACING.xs,
+    flex: 1,
+    paddingRight: SPACING.md,
+  },
   addButton: {
-    width: SPACING.xxl,
-    height: SPACING.xxl,
+    width: 48,
+    height: 48,
     borderRadius: BORDER_RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pressed: {
     opacity: OPACITY.pressed,
+    transform: [{ scale: 0.96 }],
   },
   centered: {
     flex: 1,
@@ -130,6 +161,17 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: SPACING.md,
+  },
+  emptyCard: {
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: SPACING.xl,
+    gap: SPACING.sm,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    textAlign: 'center',
+    marginTop: SPACING.xs,
   },
   emptyText: {
     textAlign: 'center',

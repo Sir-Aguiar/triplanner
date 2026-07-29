@@ -1,9 +1,8 @@
-import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ExternalLink } from '@/components/external-link';
+import { AtmosphericBackground } from '@/components/atmospheric-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Collapsible } from '@/components/ui/collapsible';
@@ -11,159 +10,159 @@ import {
   BORDER_RADIUS,
   BottomTabInset,
   MaxContentWidth,
-  OPACITY,
   SHADOWS,
   SPACING,
   TYPOGRAPHY,
 } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + SPACING.md,
-  };
+const TIPS = [
+  {
+    title: 'Defina o orçamento cedo',
+    body: 'Comece pelo valor total e distribua por categoria. Assim fica claro onde dá para flexionar e onde não.',
+    icon: { ios: 'banknote' as const, android: 'payments' as const, web: 'payments' as const },
+  },
+  {
+    title: 'Monte a linha do tempo',
+    body: 'Organize atividades por dia. Deixe folgas entre passeios longos e reserve blocos para refeições.',
+    icon: { ios: 'calendar' as const, android: 'event' as const, web: 'event' as const },
+  },
+  {
+    title: 'Separe custos por pessoa',
+    body: 'Hospedagem e transfer compartilhados ficam mais justos quando o custo é marcado por viajante.',
+    icon: { ios: 'person.2' as const, android: 'group' as const, web: 'group' as const },
+  },
+] as const;
+
+export default function DicasScreen() {
+  const insets = useSafeAreaInsets();
   const theme = useTheme();
 
-  const contentPlatformStyle =
-    Platform.OS === 'android'
-      ? {
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-          paddingBottom: insets.bottom,
-        }
-      : undefined;
-
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
+    <ThemedView style={styles.root}>
+      <AtmosphericBackground />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.contentContainer,
+          {
+            paddingBottom: insets.bottom + BottomTabInset + SPACING.md,
+            paddingLeft: Math.max(insets.left, SPACING.lg),
+            paddingRight: Math.max(insets.right, SPACING.lg),
+          },
+        ]}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <ThemedText type="subtitle">Dicas</ThemedText>
+          <ThemedText themeColor="textSecondary" style={styles.intro}>
+            Pequenos hábitos que deixam o planejamento mais leve e o roteiro mais realista.
           </ThemedText>
+        </View>
 
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView
-                type="surface"
-                style={[styles.linkButton, { borderColor: theme.border }, SHADOWS.light]}>
-                <ThemedText type="link">Expo documentation</ThemedText>
+        <View style={styles.tipList}>
+          {TIPS.map((tip) => (
+            <View
+              key={tip.title}
+              style={[
+                styles.tipCard,
+                SHADOWS.light,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+              ]}>
+              <View style={[styles.tipIcon, { backgroundColor: theme.atmosphere }]}>
                 <SymbolView
+                  name={tip.icon}
+                  size={22}
                   tintColor={theme.primary}
-                  name={{ ios: 'arrow.up.right.square', android: 'link' }}
-                  size={TYPOGRAPHY.sizes.xs}
+                  weight="medium"
                 />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
+              </View>
+              <View style={styles.tipCopy}>
+                <ThemedText type="smallBold" style={styles.tipTitle}>
+                  {tip.title}
+                </ThemedText>
+                <ThemedText themeColor="textSecondary" type="small">
+                  {tip.body}
+                </ThemedText>
+              </View>
+            </View>
+          ))}
+        </View>
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Android and iOS support">
-            <ThemedText type="small">
-              You can open this project on Android and iOS. Use an emulator/simulator or a physical
-              device with a development build or Expo Go.
+        <View style={styles.sectionsWrapper}>
+          <Collapsible title="Como usar categorias">
+            <ThemedText type="small" themeColor="textSecondary">
+              Categorias como Hospedagem, Voo e Passeio ajudam a ver para onde o dinheiro vai. Use
+              cores e ícones para reconhecer cada tipo de gasto na linha do tempo.
             </ThemedText>
           </Collapsible>
 
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
+          <Collapsible title="Planeje em etapas">
+            <ThemedText type="small" themeColor="textSecondary">
+              Cadastre a viagem com datas e viajantes, depois vá adicionando atividades. Você pode
+              editar orçamento e detalhes a qualquer momento.
             </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
           </Collapsible>
 
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
+          <Collapsible title="Modo convidado">
+            <ThemedText type="small" themeColor="textSecondary">
+              Dá para organizar roteiros offline sem conta. Quando quiser sincronizar entre
+              dispositivos, entre ou crie uma conta no menu.
             </ThemedText>
           </Collapsible>
-        </ThemedView>
-      </ThemedView>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  container: {
     maxWidth: MaxContentWidth,
-    flexGrow: 1,
+    width: '100%',
+    alignSelf: 'center',
+    paddingTop: SPACING.lg,
+    gap: SPACING.lg,
   },
-  titleContainer: {
+  header: {
+    gap: SPACING.sm,
+  },
+  intro: {
+    maxWidth: 360,
+  },
+  tipList: {
     gap: SPACING.md,
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.xxxl,
   },
-  centerText: {
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: OPACITY.pressed,
-  },
-  linkButton: {
+  tipCard: {
     flexDirection: 'row',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.pill,
-    borderWidth: 1,
-    justifyContent: 'center',
-    gap: SPACING.xs,
+    gap: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: SPACING.md,
+    alignItems: 'flex-start',
+  },
+  tipIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tipCopy: {
+    flex: 1,
+    gap: SPACING.xs,
+  },
+  tipTitle: {
+    fontSize: TYPOGRAPHY.sizes.md,
+    lineHeight: TYPOGRAPHY.lineHeights.md,
   },
   sectionsWrapper: {
-    gap: SPACING.xl,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
-  },
-  imageReact: {
-    width: SPACING.xxxl * 2,
-    height: SPACING.xxxl * 2,
-    alignSelf: 'center',
+    gap: SPACING.md,
+    paddingBottom: SPACING.md,
   },
 });

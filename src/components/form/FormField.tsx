@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, View, type ViewProps } from 'react-native
 import { SymbolView } from 'expo-symbols';
 
 import { ThemedText } from '@/components/themed-text';
-import { BORDER_RADIUS, OPACITY, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { BORDER_RADIUS, FontFamily, OPACITY, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type FormFieldProps = ViewProps & {
@@ -103,11 +103,12 @@ export function FormField({
 
 export const formControlStyles = StyleSheet.create({
   control: {
-    minHeight: 48,
-    borderWidth: 1,
+    minHeight: 52,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.sm + 2,
+    fontFamily: FontFamily.sansMedium,
     fontSize: TYPOGRAPHY.sizes.md,
     lineHeight: TYPOGRAPHY.lineHeights.md,
   },
@@ -123,9 +124,9 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   label: {
+    fontFamily: FontFamily.sansSemibold,
     fontSize: TYPOGRAPHY.sizes.sm,
     lineHeight: TYPOGRAPHY.lineHeights.sm,
-    fontWeight: TYPOGRAPHY.weights.semibold,
   },
   infoButton: {
     padding: SPACING.xs / 2,

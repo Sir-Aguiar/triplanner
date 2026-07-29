@@ -3,7 +3,7 @@ import { Animated, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { BORDER_RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { BORDER_RADIUS, FontFamily, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type ToastContextValue = {
@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
   },
   text: {
     textAlign: 'center',
+    fontFamily: FontFamily.sansSemibold,
     fontSize: TYPOGRAPHY.sizes.sm,
     lineHeight: TYPOGRAPHY.lineHeights.sm,
-    fontWeight: TYPOGRAPHY.weights.semibold,
   },
 });

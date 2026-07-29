@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import {
   BORDER_RADIUS,
+  FontFamily,
   OPACITY,
   SPACING,
   TYPOGRAPHY,
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   activityCard: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     gap: SPACING.md,
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   activityCta: {
-    minHeight: 44,
+    minHeight: 48,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
     flexDirection: 'row',
@@ -357,9 +358,9 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   activityCtaLabel: {
+    fontFamily: FontFamily.sansSemibold,
     fontSize: TYPOGRAPHY.sizes.sm,
     lineHeight: TYPOGRAPHY.lineHeights.sm,
-    fontWeight: TYPOGRAPHY.weights.semibold,
   },
   pressed: {
     opacity: OPACITY.pressed,

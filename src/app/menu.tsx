@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   Easing,
   runOnJS,
@@ -14,7 +15,7 @@ import { AppHeader } from '@/components/app-header';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { BORDER_RADIUS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { BORDER_RADIUS, FontFamily, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useSession } from '@/contexts/session';
 import { useTheme } from '@/hooks/use-theme';
 import { syncService } from '@/services';
@@ -139,8 +140,13 @@ export default function MenuScreen() {
         <AppHeader variant="plain" action="back" onBackPress={dismiss} />
 
         <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, SPACING.lg) }]}>
-          <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <View style={[styles.cardBanner, { backgroundColor: theme.primary }]} />
+          <View style={[styles.card, SHADOWS.medium, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <LinearGradient
+              colors={[theme.primary, theme.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardBanner}
+            />
 
             {isLoggedIn ? (
               <View style={styles.cardBody}>
@@ -149,7 +155,7 @@ export default function MenuScreen() {
                     <View
                       style={[
                         styles.avatar,
-                        { backgroundColor: theme.secondary, borderColor: theme.surface },
+                        { backgroundColor: theme.accent, borderColor: theme.surface },
                       ]}>
                       <ThemedText style={[styles.avatarLabel, { color: theme.textInverse }]}>
                         {getInitials(user.name)}
@@ -182,6 +188,9 @@ export default function MenuScreen() {
               </View>
             ) : (
               <View style={styles.cardBody}>
+                <ThemedText type="subtitle" style={styles.guestBrand}>
+                  triplanner
+                </ThemedText>
                 <ThemedText themeColor="textSecondary" style={styles.blurb}>
                   {PROFILE_BLURB}
                 </ThemedText>
@@ -226,32 +235,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   card: {
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
-    ...SHADOWS.light,
   },
   cardBanner: {
-    height: 96,
+    height: 112,
   },
   cardBody: {
     padding: SPACING.lg,
     gap: SPACING.md,
   },
   avatar: {
-    width: 72,
-    height: 72,
+    width: 76,
+    height: 76,
     borderRadius: BORDER_RADIUS.pill,
-    marginTop: -SPACING.xxxl,
+    marginTop: -SPACING.xxxl - 4,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
     alignSelf: 'center',
   },
   avatarLabel: {
+    fontFamily: FontFamily.sansBold,
     fontSize: TYPOGRAPHY.sizes.xl,
     lineHeight: TYPOGRAPHY.lineHeights.xl,
-    fontWeight: TYPOGRAPHY.weights.bold,
   },
   profileCopy: {
     alignItems: 'center',
@@ -262,14 +270,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   profileUsername: {
+    fontFamily: FontFamily.sansSemibold,
     fontSize: TYPOGRAPHY.sizes.md,
     lineHeight: TYPOGRAPHY.lineHeights.md,
-    fontWeight: TYPOGRAPHY.weights.semibold,
   },
   profileEmail: {
+    fontFamily: FontFamily.sansMedium,
     fontSize: TYPOGRAPHY.sizes.sm,
     lineHeight: TYPOGRAPHY.lineHeights.sm,
     textAlign: 'center',
+  },
+  guestBrand: {
+    textAlign: 'center',
+    letterSpacing: -0.4,
   },
   blurb: {
     marginBottom: SPACING.xs,

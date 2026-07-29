@@ -1,4 +1,14 @@
 import {
+  Fraunces_600SemiBold,
+  Fraunces_700Bold,
+} from '@expo-google-fonts/fraunces';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import {
   DarkTheme,
   DefaultTheme,
   Stack,
@@ -6,6 +16,7 @@ import {
   type Theme,
 } from 'expo-router';
 import { DatabaseProvider } from '@nozbe/watermelondb/react';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
@@ -144,6 +155,14 @@ export default function RootLayout() {
   const navigationTheme = useMemo(() => createNavigationTheme(scheme), [scheme]);
   const [status, setStatus] = useState<InitStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fontsLoaded, fontError] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    Fraunces_600SemiBold,
+    Fraunces_700Bold,
+  });
 
   const bootstrap = useCallback(async () => {
     setStatus('loading');
@@ -166,9 +185,11 @@ export default function RootLayout() {
     bootstrap();
   }, [bootstrap]);
 
+  const appReady = status === 'ready' && (fontsLoaded || Boolean(fontError));
+
   return (
     <ThemeProvider value={navigationTheme}>
-      {status !== 'ready' ? (
+      {!appReady ? (
         <DatabaseLoadingScreen
           errorMessage={status === 'error' ? errorMessage : null}
           onRetry={status === 'error' ? () => void bootstrap() : undefined}

@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import type { TripListItem } from '@/hooks/use-trips';
-import { BORDER_RADIUS, OPACITY, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { BORDER_RADIUS, OPACITY, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatCurrencyBrl } from '@/utils/currency';
 import { formatDatePtBr } from '@/utils/dates';
@@ -22,11 +22,13 @@ export function TripCard({ trip, onPress }: TripCardProps) {
       onPress={() => onPress(trip.id)}
       style={({ pressed }) => [
         styles.card,
+        SHADOWS.light,
         {
           backgroundColor: theme.surface,
           borderColor: theme.border,
+          transform: [{ scale: pressed ? 0.985 : 1 }],
+          opacity: pressed ? OPACITY.pressed : 1,
         },
-        pressed && styles.pressed,
       ]}>
       <View style={[styles.accent, { backgroundColor: theme.primary }]} />
 
@@ -40,11 +42,13 @@ export function TripCard({ trip, onPress }: TripCardProps) {
         </ThemedText>
 
         <View style={styles.metaRow}>
-          <ThemedText themeColor="textTertiary" type="small">
-            {trip.travelers} {trip.travelers === 1 ? 'viajante' : 'viajantes'}
-          </ThemedText>
+          <View style={[styles.chip, { backgroundColor: theme.surfaceMuted }]}>
+            <ThemedText themeColor="textSecondary" type="small" style={styles.chipText}>
+              {trip.travelers} {trip.travelers === 1 ? 'viajante' : 'viajantes'}
+            </ThemedText>
+          </View>
 
-          <ThemedText themeColor="textSecondary" type="small">
+          <ThemedText themeColor="textSecondary" type="smallBold">
             {trip.totalBudget > 0 ? formatCurrencyBrl(trip.totalBudget) : 'Sem custo'}
           </ThemedText>
         </View>
@@ -61,17 +65,17 @@ export function TripCard({ trip, onPress }: TripCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
     flexDirection: 'row',
   },
   accent: {
-    width: 4,
+    width: 5,
   },
   body: {
     flex: 1,
-    padding: SPACING.md,
+    padding: SPACING.md + 2,
     gap: SPACING.xs,
   },
   title: {
@@ -85,7 +89,13 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     marginTop: SPACING.xs,
   },
-  pressed: {
-    opacity: OPACITY.pressed,
+  chip: {
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.pill,
+  },
+  chipText: {
+    fontSize: TYPOGRAPHY.sizes.xs,
+    lineHeight: TYPOGRAPHY.lineHeights.xs,
   },
 });

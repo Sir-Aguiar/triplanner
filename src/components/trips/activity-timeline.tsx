@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { BORDER_RADIUS, OPACITY, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { BORDER_RADIUS, OPACITY, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatCurrencyBrl } from '@/utils/currency';
 import { formatDatePtBr, formatTripDayLabel, getDateKey } from '@/utils/dates';
@@ -112,6 +112,7 @@ export function ActivityTimeline({
                   key={activity.id}
                   style={[
                     styles.card,
+                    SHADOWS.light,
                     {
                       backgroundColor: theme.surface,
                       borderColor: theme.border,
@@ -122,7 +123,12 @@ export function ActivityTimeline({
                     <View style={styles.topRow}>
                       <View style={styles.titleBlock}>
                         <View style={styles.titleRow}>
-                          <View style={[styles.iconDot, { backgroundColor: accent }]} />
+                          <View
+                            style={[
+                              styles.iconDot,
+                              { backgroundColor: `${accent}22`, borderColor: accent },
+                            ]}
+                          />
                           <ThemedText type="smallBold" style={styles.title} numberOfLines={2}>
                             {activity.title}
                           </ThemedText>
@@ -272,13 +278,13 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   card: {
-    borderWidth: 1,
-    borderRadius: BORDER_RADIUS.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
     flexDirection: 'row',
   },
   accent: {
-    width: 4,
+    width: 5,
   },
   body: {
     flex: 1,
@@ -301,9 +307,10 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   iconDot: {
-    width: 10,
-    height: 10,
+    width: 12,
+    height: 12,
     borderRadius: BORDER_RADIUS.pill,
+    borderWidth: 2,
   },
   title: {
     flex: 1,
@@ -323,10 +330,11 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   menuSheet: {
-    borderWidth: 1,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.lg,
     gap: SPACING.sm,
+    ...SHADOWS.medium,
   },
   menuAction: {
     minHeight: 44,

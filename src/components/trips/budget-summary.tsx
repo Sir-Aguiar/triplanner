@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { BORDER_RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { BORDER_RADIUS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   resolveBudgetProgress,
@@ -27,8 +27,18 @@ export function BudgetSummary({
   const hasFinancialData = progress.planned > 0 || progress.spent > 0;
 
   return (
-    <View style={styles.root}>
-      <ThemedText type="smallBold">Orçamento</ThemedText>
+    <View
+      style={[
+        styles.root,
+        SHADOWS.light,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
+        },
+      ]}>
+      <ThemedText type="smallBold" style={styles.heading}>
+        Orçamento
+      </ThemedText>
 
       {!hasFinancialData ? (
         <ThemedText themeColor="textSecondary">Não informado</ThemedText>
@@ -63,7 +73,7 @@ export function BudgetSummary({
 
           {progress.planned > 0 ? (
             <View
-              style={[styles.track, { backgroundColor: theme.border }]}
+              style={[styles.track, { backgroundColor: theme.surfaceMuted }]}
               accessibilityRole="progressbar"
               accessibilityValue={{
                 min: 0,
@@ -92,7 +102,7 @@ export function BudgetSummary({
       )}
 
       {categoryBreakdown.length > 0 ? (
-        <View style={styles.breakdown}>
+        <View style={[styles.breakdown, { borderTopColor: theme.border }]}>
           <ThemedText type="smallBold">Por categoria</ThemedText>
           {categoryBreakdown.map((item) => {
             const share =
@@ -127,6 +137,13 @@ export function BudgetSummary({
 const styles = StyleSheet.create({
   root: {
     gap: SPACING.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+  },
+  heading: {
+    fontSize: TYPOGRAPHY.sizes.md,
+    lineHeight: TYPOGRAPHY.lineHeights.md,
   },
   metrics: {
     gap: SPACING.sm,
@@ -138,7 +155,7 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   track: {
-    height: 6,
+    height: 8,
     borderRadius: BORDER_RADIUS.pill,
     overflow: 'hidden',
     marginTop: SPACING.xs,
@@ -150,6 +167,8 @@ const styles = StyleSheet.create({
   breakdown: {
     gap: SPACING.sm,
     marginTop: SPACING.xs,
+    paddingTop: SPACING.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   categoryRow: {
     flexDirection: 'row',

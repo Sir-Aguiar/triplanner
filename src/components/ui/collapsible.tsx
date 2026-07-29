@@ -1,11 +1,10 @@
 import { SymbolView } from 'expo-symbols';
 import { PropsWithChildren, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { BORDER_RADIUS, OPACITY, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { BORDER_RADIUS, OPACITY, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
@@ -13,11 +12,16 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
   const theme = useTheme();
 
   return (
-    <ThemedView>
+    <View
+      style={[
+        styles.root,
+        SHADOWS.light,
+        { backgroundColor: theme.surface, borderColor: theme.border },
+      ]}>
       <Pressable
         style={({ pressed }) => [styles.heading, pressed && styles.pressedHeading]}
         onPress={() => setIsOpen((value) => !value)}>
-        <ThemedView type="surface" style={[styles.button, { borderColor: theme.border }]}>
+        <View style={[styles.button, { backgroundColor: theme.atmosphere }]}>
           <SymbolView
             name={{ ios: 'chevron.right', android: 'chevron_right' }}
             size={TYPOGRAPHY.sizes.sm}
@@ -25,22 +29,28 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
             tintColor={theme.primary}
             style={{ transform: [{ rotate: isOpen ? '-90deg' : '90deg' }] }}
           />
-        </ThemedView>
+        </View>
 
-        <ThemedText type="small">{title}</ThemedText>
+        <ThemedText type="smallBold" style={styles.title}>
+          {title}
+        </ThemedText>
       </Pressable>
       {isOpen && (
-        <Animated.View entering={FadeIn.duration(200)}>
-          <ThemedView type="surface" style={[styles.content, { borderColor: theme.border }]}>
-            {children}
-          </ThemedView>
+        <Animated.View entering={FadeIn.duration(200)} style={styles.content}>
+          {children}
         </Animated.View>
       )}
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: SPACING.md,
+    gap: SPACING.sm,
+  },
   heading: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -50,18 +60,19 @@ const styles = StyleSheet.create({
     opacity: OPACITY.pressed,
   },
   button: {
-    width: SPACING.lg,
-    height: SPACING.lg,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
+    width: 28,
+    height: 28,
+    borderRadius: BORDER_RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  title: {
+    flex: 1,
+    fontSize: TYPOGRAPHY.sizes.md,
+    lineHeight: TYPOGRAPHY.lineHeights.md,
+  },
   content: {
-    marginTop: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    marginLeft: SPACING.lg,
-    padding: SPACING.lg,
+    paddingLeft: SPACING.lg + SPACING.sm,
+    paddingBottom: SPACING.xs,
   },
 });

@@ -1,7 +1,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useColorScheme } from 'react-native';
 
-import { Colors, TYPOGRAPHY } from '@/constants/theme';
+import { Colors, FontFamily, TYPOGRAPHY } from '@/constants/theme';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
@@ -14,11 +14,11 @@ export default function AppTabs() {
       tintColor={colors.primary}
       labelStyle={{
         fontSize: TYPOGRAPHY.sizes.xs,
-        fontWeight: TYPOGRAPHY.weights.medium,
+        fontFamily: FontFamily.sansMedium,
         selected: { color: colors.primary },
       }}>
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Início</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/home.png')}
           renderingMode="template"
@@ -31,7 +31,7 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Dicas</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/explore.png')}
           renderingMode="template"

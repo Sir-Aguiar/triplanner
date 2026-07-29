@@ -1,30 +1,32 @@
 /**
- * UI/UX Theme — paleta "Horizonte de Viagem"
- * Minimalista, harmonioso e confortável para leitura.
+ * UI/UX Theme — paleta "Maré Suave"
+ * Teal profundo, névoa fresca e âmbar de amanhecer — confortável e distinto.
  */
 
 import { Platform } from 'react-native';
 
 export const COLORS = {
-  primary: '#2B5B84',
-  secondary: '#5FA8D3',
-  accent: '#F2A65A',
+  primary: '#1F4E5F',
+  secondary: '#5B8FA6',
+  accent: '#E09F3E',
 
-  background: '#F7F9FC',
+  background: '#F0F4F7',
   surface: '#FFFFFF',
+  /** Tom suave no topo de telas (gradiente atmosférico). */
+  atmosphere: '#DCE8EE',
 
-  textPrimary: '#1E293B',
-  textSecondary: '#64748B',
-  textTertiary: '#94A3B8',
+  textPrimary: '#1A2B34',
+  textSecondary: '#5A6F7A',
+  textTertiary: '#8A9BA5',
   /** Texto sobre botões primary/accent */
   textInverse: '#FFFFFF',
 
-  success: '#10B981',
-  error: '#EF4444',
-  warning: '#F59E0B',
-  info: '#3B82F6',
+  success: '#2F9B7A',
+  error: '#D64545',
+  warning: '#C9922A',
+  info: '#4A90B8',
 
-  border: '#E2E8F0',
+  border: '#D5DEE5',
 } as const;
 
 export const SPACING = {
@@ -45,17 +47,19 @@ export const TYPOGRAPHY = {
     md: 16,
     lg: 18,
     xl: 20,
-    xxl: 24,
-    xxxl: 32,
+    xxl: 26,
+    xxxl: 34,
+    display: 40,
   },
   lineHeights: {
     xs: 16,
     sm: 20,
     md: 24,
-    lg: 28,
+    lg: 26,
     xl: 28,
-    xxl: 32,
-    xxxl: 40,
+    xxl: 34,
+    xxxl: 42,
+    display: 48,
   },
   weights: {
     regular: '400' as const,
@@ -65,33 +69,43 @@ export const TYPOGRAPHY = {
   },
 };
 
+/** Famílias carregadas via expo-font / Google Fonts. */
+export const FontFamily = {
+  sansRegular: 'PlusJakartaSans_400Regular',
+  sansMedium: 'PlusJakartaSans_500Medium',
+  sansSemibold: 'PlusJakartaSans_600SemiBold',
+  sansBold: 'PlusJakartaSans_700Bold',
+  displaySemibold: 'Fraunces_600SemiBold',
+  displayBold: 'Fraunces_700Bold',
+} as const;
+
 export const BORDER_RADIUS = {
-  sm: 4,
-  md: 8,
-  lg: 16,
-  xl: 24,
+  sm: 8,
+  md: 14,
+  lg: 20,
+  xl: 28,
   pill: 9999,
 } as const;
 
 export const SHADOWS = {
   light: {
-    shadowColor: '#1E293B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowColor: '#1F4E5F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
     elevation: 2,
   },
   medium: {
-    shadowColor: '#1E293B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#1F4E5F',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 5,
   },
 } as const;
 
 export const OPACITY = {
-  pressed: 0.7,
+  pressed: 0.72,
   disabled: 0.4,
 } as const;
 
@@ -104,7 +118,8 @@ export const Colors = {
 
     background: COLORS.background,
     surface: COLORS.surface,
-    surfaceMuted: COLORS.border,
+    surfaceMuted: '#E4EBF0',
+    atmosphere: COLORS.atmosphere,
 
     textPrimary: COLORS.textPrimary,
     textSecondary: COLORS.textSecondary,
@@ -119,17 +134,18 @@ export const Colors = {
     border: COLORS.border,
   },
   dark: {
-    primary: COLORS.secondary,
-    secondary: COLORS.primary,
+    primary: '#7EB8C9',
+    secondary: '#3D6B7A',
     accent: COLORS.accent,
 
-    background: '#0F172A',
-    surface: '#1E293B',
-    surfaceMuted: '#334155',
+    background: '#0C171C',
+    surface: '#152228',
+    surfaceMuted: '#1E3340',
+    atmosphere: '#122028',
 
-    textPrimary: '#F8FAFC',
-    textSecondary: '#94A3B8',
-    textTertiary: '#64748B',
+    textPrimary: '#F2F7F9',
+    textSecondary: '#9BB0BA',
+    textTertiary: '#6F8692',
     textInverse: COLORS.textInverse,
 
     success: COLORS.success,
@@ -137,7 +153,7 @@ export const Colors = {
     warning: COLORS.warning,
     info: COLORS.info,
 
-    border: '#334155',
+    border: '#2A4050',
   },
 } as const;
 

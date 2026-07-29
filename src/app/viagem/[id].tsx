@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AtmosphericBackground } from '@/components/atmospheric-background';
 import { ActivityFormModal } from '@/components/trips/activity-form-modal';
 import {
   ActivityTimeline,
@@ -23,7 +25,9 @@ import { ThemedView } from '@/components/themed-view';
 import { useToast } from '@/components/ui/toast';
 import {
   BORDER_RADIUS,
+  FontFamily,
   OPACITY,
+  SHADOWS,
   SPACING,
   TYPOGRAPHY,
 } from '@/constants/theme';
@@ -123,6 +127,7 @@ export default function ViagemDetalhesScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <AtmosphericBackground />
       <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
         {loading ? (
           <View style={styles.centered}>
@@ -137,17 +142,23 @@ export default function ViagemDetalhesScreen() {
             <ScrollView
               contentContainerStyle={styles.content}
               showsVerticalScrollIndicator={false}>
-              <View style={[styles.hero, { backgroundColor: theme.primary }]}>
+              <LinearGradient
+                colors={[theme.primary, theme.secondary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.hero, SHADOWS.medium]}>
                 <ThemedText style={[styles.heroTitle, { color: theme.textInverse }]}>
                   {trip.title}
                 </ThemedText>
                 <ThemedText style={[styles.heroMeta, { color: theme.textInverse }]}>
                   {formatDatePtBr(trip.startDate)} — {formatDatePtBr(trip.endDate)}
                 </ThemedText>
-                <ThemedText style={[styles.heroMeta, { color: theme.textInverse }]}>
-                  {trip.travelers} {trip.travelers === 1 ? 'viajante' : 'viajantes'}
-                </ThemedText>
-              </View>
+                <View style={[styles.heroChip, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
+                  <ThemedText style={[styles.heroChipText, { color: theme.textInverse }]}>
+                    {trip.travelers} {trip.travelers === 1 ? 'viajante' : 'viajantes'}
+                  </ThemedText>
+                </View>
+              </LinearGradient>
 
               <View style={styles.section}>
                 <BudgetSummary
@@ -164,13 +175,14 @@ export default function ViagemDetalhesScreen() {
                   onPress={() => setTripModalOpen(true)}
                   style={({ pressed }) => [
                     styles.actionButton,
+                    SHADOWS.light,
                     {
                       backgroundColor: theme.surface,
                       borderColor: theme.border,
                     },
                     pressed && styles.pressed,
                   ]}>
-                  <ThemedText type="smallBold">Editar Viagem</ThemedText>
+                  <ThemedText type="smallBold">Editar</ThemedText>
                 </Pressable>
 
                 <Pressable
@@ -186,20 +198,26 @@ export default function ViagemDetalhesScreen() {
                     pressed && styles.pressed,
                   ]}>
                   <ThemedText type="smallBold" style={{ color: theme.error }}>
-                    Excluir Viagem
+                    Excluir
                   </ThemedText>
                 </Pressable>
               </View>
 
               {trip.description ? (
-                <View style={styles.section}>
+                <View
+                  style={[
+                    styles.descriptionCard,
+                    { backgroundColor: theme.surface, borderColor: theme.border },
+                  ]}>
                   <ThemedText type="smallBold">Descrição</ThemedText>
                   <ThemedText themeColor="textSecondary">{trip.description}</ThemedText>
                 </View>
               ) : null}
 
               <View style={styles.section}>
-                <ThemedText type="smallBold">Linha do tempo</ThemedText>
+                <ThemedText type="subtitle" style={styles.timelineHeading}>
+                  Linha do tempo
+                </ThemedText>
                 {loadingActivities ? (
                   <ActivityIndicator color={theme.primary} />
                 ) : (
@@ -226,6 +244,7 @@ export default function ViagemDetalhesScreen() {
               }}
               style={({ pressed }) => [
                 styles.fab,
+                SHADOWS.medium,
                 { backgroundColor: theme.accent },
                 pressed && styles.pressed,
               ]}>
@@ -288,19 +307,34 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   hero: {
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
-    gap: SPACING.xs,
+    gap: SPACING.sm,
+    minHeight: 160,
+    justifyContent: 'flex-end',
   },
   heroTitle: {
+    fontFamily: FontFamily.displaySemibold,
     fontSize: TYPOGRAPHY.sizes.xxl,
     lineHeight: TYPOGRAPHY.lineHeights.xxl,
-    fontWeight: TYPOGRAPHY.weights.semibold,
   },
   heroMeta: {
+    fontFamily: FontFamily.sansMedium,
     fontSize: TYPOGRAPHY.sizes.sm,
     lineHeight: TYPOGRAPHY.lineHeights.sm,
     opacity: 0.92,
+  },
+  heroChip: {
+    alignSelf: 'flex-start',
+    marginTop: SPACING.xs,
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.pill,
+  },
+  heroChipText: {
+    fontFamily: FontFamily.sansSemibold,
+    fontSize: TYPOGRAPHY.sizes.xs,
+    lineHeight: TYPOGRAPHY.lineHeights.xs,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -308,22 +342,32 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    minHeight: 44,
-    borderWidth: 1,
+    minHeight: 48,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: SPACING.sm,
   },
+  descriptionCard: {
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: SPACING.lg,
+    gap: SPACING.sm,
+  },
   section: {
     gap: SPACING.md,
+  },
+  timelineHeading: {
+    fontSize: TYPOGRAPHY.sizes.xl,
+    lineHeight: TYPOGRAPHY.lineHeights.xl,
   },
   fab: {
     position: 'absolute',
     right: SPACING.lg,
     bottom: SPACING.lg,
-    width: 56,
-    height: 56,
+    width: 58,
+    height: 58,
     borderRadius: BORDER_RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',

@@ -8,10 +8,10 @@ import {
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { BORDER_RADIUS, OPACITY, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { BORDER_RADIUS, FontFamily, OPACITY, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'accent';
 
 export type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   label: string;
@@ -32,10 +32,21 @@ export function Button({
   const isDisabled = disabled || loading;
 
   const backgroundColor =
-    variant === 'primary' ? theme.primary : variant === 'secondary' ? theme.surface : 'transparent';
+    variant === 'primary'
+      ? theme.primary
+      : variant === 'accent'
+        ? theme.accent
+        : variant === 'secondary'
+          ? theme.surface
+          : 'transparent';
   const textColor =
-    variant === 'primary' ? theme.textInverse : variant === 'secondary' ? theme.textPrimary : theme.primary;
+    variant === 'primary' || variant === 'accent'
+      ? theme.textInverse
+      : variant === 'secondary'
+        ? theme.textPrimary
+        : theme.primary;
   const borderColor = variant === 'secondary' ? theme.border : 'transparent';
+  const elevation = variant === 'primary' || variant === 'accent' ? SHADOWS.light : undefined;
 
   return (
     <Pressable
@@ -43,10 +54,12 @@ export function Button({
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.base,
+        elevation,
         {
           backgroundColor,
           borderColor,
           opacity: isDisabled ? OPACITY.disabled : pressed ? OPACITY.pressed : 1,
+          transform: [{ scale: pressed && !isDisabled ? 0.98 : 1 }],
         },
         style,
       ]}
@@ -62,17 +75,17 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 48,
+    minHeight: 52,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.sm + 2,
   },
   label: {
+    fontFamily: FontFamily.sansSemibold,
     fontSize: TYPOGRAPHY.sizes.md,
     lineHeight: TYPOGRAPHY.lineHeights.md,
-    fontWeight: TYPOGRAPHY.weights.semibold,
   },
 });
