@@ -19,7 +19,7 @@ import { DatabaseProvider } from '@nozbe/watermelondb/react';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import { StyleSheet, useColorScheme, View } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { DatabaseLoadingScreen } from '@/components/database-loading-screen';
@@ -134,9 +134,8 @@ function AppStack() {
 
 function RootNavigator() {
   const { isLoggedIn, isLoading: isSessionLoading, hasDismissedWelcome } = useSession();
+  const { isSyncingOnOpen } = useBackgroundSync();
   const canEnterApp = isLoggedIn || hasDismissedWelcome;
-
-  useBackgroundSync();
 
   if (isSessionLoading) {
     return <DatabaseLoadingScreen />;
@@ -146,7 +145,19 @@ function RootNavigator() {
     return <AuthGateStack />;
   }
 
-  return <AppStack />;
+  return (
+    <View style={styles.navigatorRoot}>
+      <AppStack />
+      {isSyncingOnOpen ? (
+        <View style={styles.syncOverlay} pointerEvents="auto">
+          <DatabaseLoadingScreen
+            title="Sincronizando"
+            subtitle="Atualizando suas viagens com o servidor. Aguarde um momento."
+          />
+        </View>
+      ) : null}
+    </View>
+  );
 }
 
 export default function RootLayout() {
@@ -207,3 +218,13 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  navigatorRoot: {
+    flex: 1,
+  },
+  syncOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 100,
+  },
+});

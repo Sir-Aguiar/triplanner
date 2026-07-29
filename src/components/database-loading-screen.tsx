@@ -8,9 +8,16 @@ import { useTheme } from '@/hooks/use-theme';
 type Props = {
   errorMessage?: string | null;
   onRetry?: () => void;
+  title?: string;
+  subtitle?: string;
 };
 
-export function DatabaseLoadingScreen({ errorMessage, onRetry }: Props) {
+export function DatabaseLoadingScreen({
+  errorMessage,
+  onRetry,
+  title = 'Preparando seu app',
+  subtitle = 'Configurando o banco de dados local. Isso não precisa de internet.',
+}: Props) {
   const theme = useTheme();
   const hasError = Boolean(errorMessage);
 
@@ -19,12 +26,10 @@ export function DatabaseLoadingScreen({ errorMessage, onRetry }: Props) {
       <View style={styles.content}>
         {!hasError && <ActivityIndicator size="large" color={theme.primary} />}
         <ThemedText type="subtitle" style={styles.title}>
-          {hasError ? 'Não foi possível iniciar' : 'Preparando seu app'}
+          {hasError ? 'Não foi possível iniciar' : title}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-          {hasError
-            ? errorMessage
-            : 'Configurando o banco de dados local. Isso não precisa de internet.'}
+          {hasError ? errorMessage : subtitle}
         </ThemedText>
         {hasError && onRetry ? (
           <Pressable
