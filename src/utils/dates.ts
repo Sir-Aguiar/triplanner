@@ -27,6 +27,47 @@ export function formatDatePtBr(iso: string): string {
   });
 }
 
+const MONTHS_SHORT_PT = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez',
+] as const;
+
+/** Período compacto para cards (ex.: "12 a 20 de Out, 2026"). */
+export function formatTripPeriod(startIso: string, endIso: string): string {
+  if (!startIso || !endIso) {
+    return '';
+  }
+
+  const start = fromUtcIsoDate(startIso);
+  const end = fromUtcIsoDate(endIso);
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+  const startMonth = MONTHS_SHORT_PT[start.getMonth()];
+  const endMonth = MONTHS_SHORT_PT[end.getMonth()];
+  const startYear = start.getFullYear();
+  const endYear = end.getFullYear();
+
+  if (startYear === endYear && start.getMonth() === end.getMonth()) {
+    return `${startDay} a ${endDay} de ${startMonth}, ${startYear}`;
+  }
+
+  if (startYear === endYear) {
+    return `${startDay} de ${startMonth} a ${endDay} de ${endMonth}, ${startYear}`;
+  }
+
+  return `${startDay} de ${startMonth}, ${startYear} a ${endDay} de ${endMonth}, ${endYear}`;
+}
+
 /** Chave YYYY-MM-DD (calendário local derivado do ISO UTC de negócio). */
 export function getDateKey(iso: string): string {
   const date = fromUtcIsoDate(iso);

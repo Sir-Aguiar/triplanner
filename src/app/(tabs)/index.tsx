@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useMemo } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -40,14 +39,13 @@ function greetingForNow(): string {
 export default function HomeScreen() {
   const theme = useTheme();
   const { user, isLoggedIn } = useSession();
-  const { trips, loading } = useTrips();
+  const { trips, ready } = useTrips();
 
   const { upcoming, nextTrip } = useMemo(() => {
     const now = Date.now();
-    const sorted = [...trips].sort(
-      (a, b) => Date.parse(a.startDate) - Date.parse(b.startDate),
-    );
-    const upcomingTrips = sorted.filter((trip) => Date.parse(trip.endDate) >= now).slice(0, 3);
+    const upcomingTrips = trips
+      .filter((trip) => Date.parse(trip.endDate) >= now)
+      .slice(0, 3);
     return {
       upcoming: upcomingTrips,
       nextTrip: upcomingTrips[0] ?? null,
@@ -81,8 +79,8 @@ export default function HomeScreen() {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.heroCard, SHADOWS.medium]}>
-            {loading ? (
-              <ActivityIndicator color={theme.textInverse} />
+            {!ready ? (
+              <View style={styles.heroPlaceholder} />
             ) : nextTrip ? (
               <>
                 <ThemedText style={[styles.heroEyebrow, { color: theme.textInverse }]}>
@@ -152,8 +150,8 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {loading ? (
-            <ActivityIndicator color={theme.primary} style={styles.loader} />
+          {!ready ? (
+            <View style={styles.listPlaceholder} />
           ) : upcoming.length === 0 ? (
             <View
               style={[
@@ -282,8 +280,11 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
   },
-  loader: {
-    marginVertical: SPACING.lg,
+  heroPlaceholder: {
+    minHeight: 120,
+  },
+  listPlaceholder: {
+    minHeight: 48,
   },
   pressed: {
     opacity: OPACITY.pressed,
