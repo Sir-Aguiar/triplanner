@@ -5,11 +5,13 @@ import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AtmosphericBackground } from "@/components/atmospheric-background";
+import { CloneTripModal } from "@/components/trips/clone-trip-modal";
 import { TripCard } from "@/components/trips/trip-card";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/button";
 import { BORDER_RADIUS, BottomTabInset, OPACITY, SHADOWS, SPACING, TYPOGRAPHY } from "@/constants/theme";
+import { useCloneTrip } from "@/hooks/use-clone-trip";
 import { useTheme } from "@/hooks/use-theme";
 import { getTripLane, useTrips, type TripLane, type TripListItem } from "@/hooks/use-trips";
 
@@ -54,6 +56,7 @@ export default function ViagensScreen() {
   const theme = useTheme();
   const { trips, ready } = useTrips();
   const rows = useMemo(() => buildTripListRows(trips), [trips]);
+  const { cloneModalVisible, submitting, requestClone, confirmClone, closeCloneModal } = useCloneTrip();
 
   return (
     <ThemedView style={styles.container}>
@@ -118,6 +121,9 @@ export default function ViagensScreen() {
                     params: { id: tripId },
                   })
                 }
+                onClone={(tripId) => {
+                  void requestClone(tripId);
+                }}
               />
             );
           }}
@@ -154,6 +160,15 @@ export default function ViagensScreen() {
           showsVerticalScrollIndicator={false}
         />
       </SafeAreaView>
+
+      <CloneTripModal
+        visible={cloneModalVisible}
+        submitting={submitting}
+        onClose={closeCloneModal}
+        onConfirm={(newStartDate) => {
+          void confirmClone(newStartDate);
+        }}
+      />
     </ThemedView>
   );
 }

@@ -6,6 +6,17 @@ export {
 } from './trip/CreateTripDTO';
 
 export {
+  cloneTripDefaultValues,
+  cloneTripFormSchema,
+  type CloneActivityDto,
+  type CloneTripDto,
+  type CloneTripFormDTO,
+  type CloneTripFormValues,
+  type CloneTripRequestDto,
+  type CloneTripResponseDto,
+} from './trip/CloneTripDTO';
+
+export {
   createActivityDefaultValues,
   createActivitySchema,
   type CreateActivityDTO,

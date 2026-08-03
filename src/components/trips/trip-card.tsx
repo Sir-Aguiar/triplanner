@@ -13,6 +13,8 @@ import { formatTripPeriod } from "@/utils/dates";
 type TripCardProps = {
   trip: TripListItem;
   onPress: (tripId: string) => void;
+  /** Quando informado, exibe o ícone de clonar (feed público ou viagens próprias). */
+  onClone?: (tripId: string) => void;
 };
 
 function isRenderableCoverUri(coverImage: string): boolean {
@@ -26,7 +28,7 @@ function isRenderableCoverUri(coverImage: string): boolean {
   );
 }
 
-export function TripCard({ trip, onPress }: TripCardProps) {
+export function TripCard({ trip, onPress, onClone }: TripCardProps) {
   const theme = useTheme();
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -72,6 +74,27 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             />
           </View>
         )}
+
+        {onClone ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Clonar viagem ${trip.title}`}
+            hitSlop={SPACING.sm}
+            onPress={() => onClone(trip.id)}
+            style={({ pressed }) => [
+              styles.cloneButton,
+              { backgroundColor: theme.surface },
+              pressed && styles.clonePressed,
+            ]}
+          >
+            <SymbolView
+              name={{ ios: "doc.on.doc", android: "content_copy", web: "content_copy" }}
+              size={16}
+              tintColor={theme.textSecondary}
+              weight="medium"
+            />
+          </Pressable>
+        ) : null}
 
         <View accessibilityLabel={visibilityLabel} style={[styles.visibilityBadge, { backgroundColor: theme.surface }]}>
           <SymbolView
@@ -124,6 +147,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  cloneButton: {
+    position: "absolute",
+    top: SPACING.sm,
+    left: SPACING.sm,
+    width: 32,
+    height: 32,
+    borderRadius: BORDER_RADIUS.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    ...SHADOWS.light,
+  },
+  clonePressed: {
+    opacity: OPACITY.pressed,
+  },
   visibilityBadge: {
     position: "absolute",
     top: SPACING.sm,
@@ -147,4 +184,3 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
 });
-

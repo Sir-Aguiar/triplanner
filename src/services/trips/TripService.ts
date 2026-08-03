@@ -1,12 +1,16 @@
-import type { CreateActivityDTO, CreateTripDTO } from '@/dtos';
+import { apiRequest } from '@/api/client';
+import { ApiError } from '@/api/errors';
+import type { CloneTripResponseDto, CreateActivityDTO, CreateTripDTO } from '@/dtos';
 import type Trip from '@/database/models/Trip';
 import { createUuidV4 } from '@/database/uuid';
 import {
   activityRepository,
+  syncRepository,
   tripRepository,
   type ActivityRepository,
   type InsertActivityRecord,
   type InsertTripRecord,
+  type SyncRepository,
   type TripRepository,
   type UpdateTripRecord,
 } from '@/repositories';
@@ -77,17 +81,20 @@ function toActivityRecord(
 type TripServiceDeps = {
   tripRepository?: TripRepository;
   activityRepository?: ActivityRepository;
+  syncRepository?: SyncRepository;
   persistenceMode?: PersistenceMode;
 };
 
 export class TripService {
   private readonly tripRepository: TripRepository;
   private readonly activityRepository: ActivityRepository;
+  private readonly syncRepository: SyncRepository;
   private readonly persistenceMode: PersistenceMode;
 
   constructor(deps: TripServiceDeps = {}) {
     this.tripRepository = deps.tripRepository ?? tripRepository;
     this.activityRepository = deps.activityRepository ?? activityRepository;
+    this.syncRepository = deps.syncRepository ?? syncRepository;
     this.persistenceMode = deps.persistenceMode ?? DEFAULT_PERSISTENCE_MODE;
   }
 
@@ -141,6 +148,46 @@ export class TripService {
       return await this.tripRepository.assignUserToOrphanTrips(userId);
     } catch (error) {
       throw toServiceError(error, 'Não foi possível vincular viagens locais à conta');
+    }
+  }
+
+  /**
+   * Clona um roteiro via API (POST /trips/:id/clone) e ingere o resultado no WatermelonDB.
+   * Usa exclusivamente os IDs retornados pelo servidor.
+   */
+  async clone(originalTripId: string, newStartDate: string, accessToken: string): Promise<string> {
+    try {
+      const response = await apiRequest<CloneTripResponseDto>(`/trips/${originalTripId}/clone`, {
+        method: 'POST',
+        body: { newStartDate },
+        accessToken,
+      });
+
+      const trip = response?.trip;
+      if (!trip?.tripId) {
+        throw new ServiceError('Resposta inválida ao clonar o roteiro');
+      }
+
+      const activities = Array.isArray(response.activities) ? response.activities : [];
+      await this.syncRepository.ingestClonedTrip(trip, activities);
+      return trip.tripId;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 0) {
+        throw new ServiceError(
+          'Conecte-se à internet para clonar este roteiro do servidor',
+          error,
+        );
+      }
+
+      if (error instanceof ServiceError) {
+        throw error;
+      }
+
+      if (error instanceof ApiError) {
+        throw new ServiceError('Ocorreu um erro ao clonar o roteiro, tente novamente', error);
+      }
+
+      throw toServiceError(error, 'Ocorreu um erro ao clonar o roteiro, tente novamente');
     }
   }
 

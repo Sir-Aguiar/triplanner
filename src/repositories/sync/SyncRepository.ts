@@ -1,6 +1,6 @@
 import { Q, type Model } from '@nozbe/watermelondb';
 
-import type { SyncTripResponseDto } from '@/dtos';
+import type { CloneActivityDto, CloneTripDto, SyncActivityResponseDto, SyncTripResponseDto } from '@/dtos';
 import { toTimestampMs } from '@/database/audit';
 import { getDatabase } from '@/database/client';
 import type Activity from '@/database/models/Activity';
@@ -12,7 +12,10 @@ export type OwnedTripWithActivities = {
   activities: Activity[];
 };
 
-function tripDirtyRaw(trip: SyncTripResponseDto): Record<string, unknown> {
+type ServerTripFields = Omit<SyncTripResponseDto, 'activities'> | CloneTripDto;
+type ServerActivityFields = SyncActivityResponseDto | CloneActivityDto;
+
+function tripDirtyRaw(trip: ServerTripFields): Record<string, unknown> {
   return {
     id: trip.tripId,
     title: trip.title,
@@ -29,7 +32,7 @@ function tripDirtyRaw(trip: SyncTripResponseDto): Record<string, unknown> {
   };
 }
 
-function activityDirtyRaw(activity: SyncTripResponseDto['activities'][number]): Record<string, unknown> {
+function activityDirtyRaw(activity: ServerActivityFields): Record<string, unknown> {
   return {
     id: activity.activityId,
     trip_id: activity.tripId,
@@ -100,6 +103,36 @@ export class SyncRepository {
       return result;
     } catch (error) {
       throw toRepositoryError(error, 'Não foi possível carregar viagens locais para sincronizar');
+    }
+  }
+
+  /**
+   * Insere viagem clonada (e atividades) com os IDs do servidor, em um único batch.
+   * Os registros já existem na nuvem — não devem ser tratados como criação local pendente.
+   */
+  async ingestClonedTrip(trip: CloneTripDto, activities: CloneActivityDto[]): Promise<void> {
+    try {
+      const database = getDatabase();
+      const tripsCollection = database.get<Trip>('trips');
+      const activitiesCollection = database.get<Activity>('activities');
+
+      const tripPayload: CloneTripDto = {
+        ...trip,
+        isPublic: false,
+      };
+
+      const batch: Model[] = [
+        tripsCollection.prepareCreateFromDirtyRaw(tripDirtyRaw(tripPayload)),
+        ...activities.map((activity) =>
+          activitiesCollection.prepareCreateFromDirtyRaw(activityDirtyRaw(activity)),
+        ),
+      ];
+
+      await database.write(async () => {
+        await database.batch(...batch);
+      });
+    } catch (error) {
+      throw toRepositoryError(error, 'Falha ao salvar o roteiro clonado no banco local');
     }
   }
 
