@@ -13,3 +13,8 @@ export type AuthTokensResponse = {
   refreshToken: string;
   user: AuthUser;
 };
+
+export type RefreshTokensResponse = {
+  accessToken: string;
+  refreshToken: string;
+};

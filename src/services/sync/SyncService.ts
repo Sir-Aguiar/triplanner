@@ -6,7 +6,7 @@ import {
 } from '@/dtos';
 import { syncRepository, type SyncRepository } from '@/repositories/sync/SyncRepository';
 
-export type SyncResult = 'ok' | 'offline' | 'error' | 'skipped';
+export type SyncResult = 'ok' | 'offline' | 'error' | 'skipped' | 'unauthorized';
 
 type SyncServiceDeps = {
   syncRepository?: SyncRepository;
@@ -54,6 +54,10 @@ export class SyncService {
     } catch (error) {
       if (error instanceof ApiError && error.status === 0) {
         return 'offline';
+      }
+
+      if (error instanceof ApiError && error.status === 401) {
+        return 'unauthorized';
       }
 
       console.error('Falha na sincronização de viagens:', error);

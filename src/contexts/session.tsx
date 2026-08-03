@@ -1,11 +1,15 @@
-import { createContext, use, useMemo, useState, type PropsWithChildren } from 'react';
+import { createContext, use, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
+import { router } from 'expo-router';
 
 import type { AuthUser } from '@/@types/Auth';
+import { setAuthSessionListeners } from '@/api/auth-session';
+import {
+  REFRESH_TOKEN_STORAGE_KEY,
+  SESSION_STORAGE_KEY,
+  USER_STORAGE_KEY,
+} from '@/api/token-storage';
 import { useStorageState } from '@/hooks/use-storage-state';
 
-const SESSION_STORAGE_KEY = 'triplanner.session';
-const REFRESH_TOKEN_STORAGE_KEY = 'triplanner.refreshToken';
-const USER_STORAGE_KEY = 'triplanner.user';
 /** Valor legado gravado como convidado — não conta como login. */
 const LEGACY_GUEST_SESSION = 'guest';
 
@@ -77,6 +81,26 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const user = useMemo(() => parseStoredUser(rawUser), [rawUser]);
   const isLoggedIn = session != null;
   const isLoading = isSessionLoading || isRefreshLoading || isUserLoading;
+
+  useEffect(() => {
+    setAuthSessionListeners({
+      onTokensUpdated: ({ accessToken, refreshToken }) => {
+        setSession(accessToken);
+        setRefreshToken(refreshToken);
+      },
+      onAuthFailed: () => {
+        setSession(null);
+        setRefreshToken(null);
+        setUserRaw(null);
+        setHasDismissedWelcome(false);
+        setTimeout(() => {
+          router.replace('/entrar');
+        }, 0);
+      },
+    });
+
+    return () => setAuthSessionListeners(null);
+  }, [setSession, setRefreshToken, setUserRaw]);
 
   return (
     <SessionContext.Provider

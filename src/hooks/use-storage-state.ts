@@ -11,7 +11,27 @@ function useAsyncState<T>(initialValue: [boolean, T | null] = [true, null]): Use
   ) as UseStateHook<T>;
 }
 
-async function setStorageItemAsync(key: string, value: string | null): Promise<void> {
+export async function getStorageItemAsync(key: string): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        return localStorage.getItem(key);
+      }
+    } catch (error) {
+      console.error('Local storage is unavailable:', error);
+    }
+    return null;
+  }
+
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch (error) {
+    console.error('SecureStore unavailable:', error);
+    return null;
+  }
+}
+
+export async function setStorageItemAsync(key: string, value: string | null): Promise<void> {
   if (Platform.OS === 'web') {
     try {
       if (value === null) {
