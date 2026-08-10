@@ -16,6 +16,8 @@ export {
   type CloneTripResponseDto,
 } from './trip/CloneTripDTO';
 
+export type { UploadTripCoverResponseDto } from './trip/UploadTripCoverDTO';
+
 export {
   createActivityDefaultValues,
   createActivitySchema,

@@ -1,7 +1,8 @@
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -35,6 +36,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTrip } from '@/hooks/use-trip';
 import { useTripActivities } from '@/hooks/use-trip-activities';
 import { activityService, tripService } from '@/services';
+import { resolveCoverImageUri } from '@/utils/cover-image';
 import { formatDatePtBr } from '@/utils/dates';
 
 export default function ViagemDetalhesScreen() {
@@ -55,6 +57,11 @@ export default function ViagemDetalhesScreen() {
   const [editingActivity, setEditingActivity] = useState<ActivityListItem | null>(null);
   const [tripModalOpen, setTripModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [coverFailed, setCoverFailed] = useState(false);
+
+  useEffect(() => {
+    setCoverFailed(false);
+  }, [trip?.coverImage]);
 
   const confirmDeleteTrip = () => {
     Alert.alert(
@@ -125,6 +132,29 @@ export default function ViagemDetalhesScreen() {
     }
   };
 
+  const handleAddCover = async () => {
+    if (!trip || busy) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const updated = await tripService.setCoverFromGallery(trip.id);
+      if (updated) {
+        setCoverFailed(false);
+        showToast('Capa atualizada');
+      }
+    } catch (coverError) {
+      console.error('Falha ao definir capa:', coverError);
+      showToast('Não foi possível adicionar a capa.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const coverUri = trip ? resolveCoverImageUri(trip.coverImage) : null;
+  const showCover = Boolean(coverUri) && !coverFailed;
+
   return (
     <ThemedView style={styles.container}>
       <AtmosphericBackground />
@@ -142,23 +172,67 @@ export default function ViagemDetalhesScreen() {
             <ScrollView
               contentContainerStyle={styles.content}
               showsVerticalScrollIndicator={false}>
-              <LinearGradient
-                colors={[theme.primary, theme.secondary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.hero, SHADOWS.medium]}>
-                <ThemedText style={[styles.heroTitle, { color: theme.textInverse }]}>
-                  {trip.title}
-                </ThemedText>
-                <ThemedText style={[styles.heroMeta, { color: theme.textInverse }]}>
-                  {formatDatePtBr(trip.startDate)} — {formatDatePtBr(trip.endDate)}
-                </ThemedText>
-                <View style={[styles.heroChip, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
-                  <ThemedText style={[styles.heroChipText, { color: theme.textInverse }]}>
-                    {trip.travelers} {trip.travelers === 1 ? 'viajante' : 'viajantes'}
+              <View style={[styles.hero, SHADOWS.medium]}>
+                {showCover && coverUri ? (
+                  <Image
+                    source={{ uri: coverUri }}
+                    style={styles.heroCover}
+                    contentFit="cover"
+                    transition={200}
+                    cachePolicy="disk"
+                    onError={() => setCoverFailed(true)}
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={[theme.primary, theme.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                )}
+
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.55)']}
+                  style={styles.heroScrim}
+                />
+
+                <View style={styles.heroContent}>
+                  <ThemedText style={[styles.heroTitle, { color: theme.textInverse }]}>
+                    {trip.title}
                   </ThemedText>
+                  <ThemedText style={[styles.heroMeta, { color: theme.textInverse }]}>
+                    {formatDatePtBr(trip.startDate)} — {formatDatePtBr(trip.endDate)}
+                  </ThemedText>
+                  <View style={[styles.heroChip, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
+                    <ThemedText style={[styles.heroChipText, { color: theme.textInverse }]}>
+                      {trip.travelers} {trip.travelers === 1 ? 'viajante' : 'viajantes'}
+                    </ThemedText>
+                  </View>
                 </View>
-              </LinearGradient>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={showCover ? 'Alterar capa' : 'Adicionar capa'}
+                  onPress={() => {
+                    void handleAddCover();
+                  }}
+                  disabled={busy}
+                  style={({ pressed }) => [
+                    styles.coverButton,
+                    { backgroundColor: theme.surface },
+                    pressed && styles.pressed,
+                  ]}>
+                  <SymbolView
+                    name={{ ios: 'photo.on.rectangle', android: 'add_photo_alternate', web: 'image' }}
+                    size={16}
+                    tintColor={theme.textSecondary}
+                    weight="medium"
+                  />
+                  <ThemedText type="smallBold" themeColor="textSecondary">
+                    {showCover ? 'Alterar capa' : 'Adicionar capa'}
+                  </ThemedText>
+                </Pressable>
+              </View>
 
               <View style={styles.section}>
                 <BudgetSummary
@@ -308,10 +382,21 @@ const styles = StyleSheet.create({
   },
   hero: {
     borderRadius: BORDER_RADIUS.xl,
+    minHeight: 200,
+    overflow: 'hidden',
+    position: 'relative',
+    justifyContent: 'flex-end',
+  },
+  heroCover: {
+    ...StyleSheet.absoluteFill,
+  },
+  heroScrim: {
+    ...StyleSheet.absoluteFill,
+  },
+  heroContent: {
     padding: SPACING.lg,
     gap: SPACING.sm,
-    minHeight: 160,
-    justifyContent: 'flex-end',
+    zIndex: 1,
   },
   heroTitle: {
     fontFamily: FontFamily.displaySemibold,
@@ -335,6 +420,19 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.sansSemibold,
     fontSize: TYPOGRAPHY.sizes.xs,
     lineHeight: TYPOGRAPHY.lineHeights.xs,
+  },
+  coverButton: {
+    position: 'absolute',
+    top: SPACING.md,
+    right: SPACING.md,
+    zIndex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: SPACING.xs + 2,
+    borderRadius: BORDER_RADIUS.md,
+    ...SHADOWS.light,
   },
   actionsRow: {
     flexDirection: 'row',

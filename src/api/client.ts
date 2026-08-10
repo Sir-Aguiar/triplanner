@@ -136,15 +136,25 @@ api.interceptors.response.use(
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const { body, accessToken, headers, method = 'GET', ...rest } = options;
+  const isFormData =
+    typeof FormData !== 'undefined' && body instanceof FormData;
+
+  const requestHeaders = AxiosHeaders.from({
+    ...headers,
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+  });
+
+  // Em multipart, o boundary precisa ser definido pela camada nativa.
+  // Não forçar `Content-Type: multipart/form-data` sem boundary.
+  if (isFormData) {
+    requestHeaders.delete('Content-Type');
+  }
 
   const response = await api.request<T>({
     url: path,
     method,
     data: body,
-    headers: {
-      ...headers,
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
+    headers: requestHeaders,
     ...rest,
   });
 

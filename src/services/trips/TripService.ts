@@ -1,3 +1,5 @@
+import * as ImagePicker from 'expo-image-picker';
+
 import { apiRequest } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { CloneTripResponseDto, CreateActivityDTO, CreateTripDTO } from '@/dtos';
@@ -20,11 +22,16 @@ import {
   type PersistenceMode,
 } from '@/services/persistence';
 import {
+  deleteLocalCoverFile,
+  persistCoverImage,
+} from '@/services/trips/cover-storage';
+import {
   clearPendingActivities,
   getPendingActivities,
   type PendingActivity,
 } from '@/stores/pending-activities';
 import { sumActivityCosts, syncBudgetWithSpent } from '@/utils/budget';
+import { isLocalCoverUri } from '@/utils/cover-image';
 
 function resolveEndTime(startTime: string, endTime: string): string {
   return endTime || startTime;
@@ -133,9 +140,51 @@ export class TripService {
       if (this.persistenceMode === 'api') {
         throw new ServiceError('Exclusão remota de viagem ainda não está disponível.');
       }
+
+      const trip = await this.tripRepository.findById(tripId);
+      const previousCover = trip.coverImage;
       await this.tripRepository.deleteWithActivities(tripId);
+      if (isLocalCoverUri(previousCover)) {
+        await deleteLocalCoverFile(previousCover);
+      }
     } catch (error) {
       throw toServiceError(error, 'Não foi possível excluir a viagem');
+    }
+  }
+
+  /**
+   * RN01: abre a galeria, copia a imagem para o armazenamento permanente,
+   * grava `file://...` no WatermelonDB e retorna a viagem atualizada (sem spinner de rede).
+   */
+  async setCoverFromGallery(tripId: string): Promise<Trip | null> {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        throw new ServiceError('Permissão para acessar a galeria foi negada.');
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.85,
+      });
+
+      if (result.canceled || !result.assets[0]?.uri) {
+        return null;
+      }
+
+      const previousCover = (await this.tripRepository.findById(tripId)).coverImage;
+      const permanentUri = await persistCoverImage(result.assets[0].uri, tripId);
+      const trip = await this.tripRepository.updateCoverImage(tripId, permanentUri);
+
+      if (isLocalCoverUri(previousCover) && previousCover !== permanentUri) {
+        await deleteLocalCoverFile(previousCover);
+      }
+
+      return trip;
+    } catch (error) {
+      throw toServiceError(error, 'Não foi possível definir a capa da viagem');
     }
   }
 

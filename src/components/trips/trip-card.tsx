@@ -7,6 +7,7 @@ import { ThemedText } from "@/components/themed-text";
 import type { TripListItem } from "@/hooks/use-trips";
 import { BORDER_RADIUS, OPACITY, SHADOWS, SPACING, TYPOGRAPHY } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { resolveCoverImageUri } from "@/utils/cover-image";
 import { formatCurrencyBrl } from "@/utils/currency";
 import { formatTripPeriod } from "@/utils/dates";
 
@@ -17,26 +18,16 @@ type TripCardProps = {
   onClone?: (tripId: string) => void;
 };
 
-function isRenderableCoverUri(coverImage: string): boolean {
-  const value = coverImage.trim();
-  if (!value || value === "placeholder") {
-    return false;
-  }
-
-  return (
-    value.startsWith("http://") || value.startsWith("https://") || value.startsWith("file:") || value.startsWith("/")
-  );
-}
-
 export function TripCard({ trip, onPress, onClone }: TripCardProps) {
   const theme = useTheme();
   const [imageFailed, setImageFailed] = useState(false);
+  const coverUri = resolveCoverImageUri(trip.coverImage);
 
   useEffect(() => {
     setImageFailed(false);
   }, [trip.coverImage]);
 
-  const showCover = isRenderableCoverUri(trip.coverImage) && !imageFailed;
+  const showCover = Boolean(coverUri) && !imageFailed;
   const visibilityLabel = trip.isPublic ? "Pública" : "Privada";
 
   return (
@@ -56,12 +47,13 @@ export function TripCard({ trip, onPress, onClone }: TripCardProps) {
       ]}
     >
       <View style={[styles.cover, { backgroundColor: theme.surfaceMuted }]}>
-        {showCover ? (
+        {showCover && coverUri ? (
           <Image
-            source={{ uri: trip.coverImage }}
+            source={{ uri: coverUri }}
             style={styles.coverImage}
             contentFit="cover"
             transition={200}
+            cachePolicy="disk"
             onError={() => setImageFailed(true)}
           />
         ) : (

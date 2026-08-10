@@ -1,9 +1,13 @@
 import type Activity from '@/database/models/Activity';
 import type Trip from '@/database/models/Trip';
 import { toIsoUtc } from '@/database/audit';
+import {
+  COVER_IMAGE_PLACEHOLDER,
+  coverImageForSyncPayload,
+} from '@/utils/cover-image';
 
 /** Placeholder quando a viagem local ainda não tem capa (DTO do servidor exige min(1)). */
-export const SYNC_COVER_IMAGE_PLACEHOLDER = 'placeholder';
+export const SYNC_COVER_IMAGE_PLACEHOLDER = COVER_IMAGE_PLACEHOLDER;
 
 /** Atividade no payload de upload (alinhado ao Zod do servidor — sem userId). */
 export type SyncActivityDto = {
@@ -86,7 +90,7 @@ export function mapTripToSyncDto(trip: Trip, activities: Activity[]): SyncTripDt
     travelers: trip.travelers,
     startDate: toIsoUtc(trip.startDate),
     endDate: toIsoUtc(trip.endDate),
-    coverImage: trip.coverImage || SYNC_COVER_IMAGE_PLACEHOLDER,
+    coverImage: coverImageForSyncPayload(trip.coverImage),
     totalBudget: trip.totalBudget,
     isPublic: trip.isPublic,
     createdAt: toIsoUtc(trip.createdAt),

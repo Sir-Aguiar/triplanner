@@ -9,6 +9,7 @@ import type {
   InsertTripRecord,
   UpdateTripRecord,
 } from '@/repositories/types';
+import { isLocalCoverUri } from '@/utils/cover-image';
 
 function mapTripRecord(trip: Trip, record: InsertTripRecord): void {
   trip._raw.id = record.id;
@@ -122,6 +123,39 @@ export class TripRepository {
       return trip;
     } catch (error) {
       throw toRepositoryError(error, 'Falha ao atualizar o custo da viagem no banco local');
+    }
+  }
+
+  /** Atualiza apenas `coverImage` (caminho local ou URL remota). */
+  async updateCoverImage(tripId: string, coverImage: string): Promise<Trip> {
+    try {
+      const database = getDatabase();
+      const trip = await database.get<Trip>('trips').find(tripId);
+
+      await database.write(async () => {
+        await trip.update((record) => {
+          record.coverImage = coverImage;
+        });
+      });
+
+      return trip;
+    } catch (error) {
+      throw toRepositoryError(error, 'Falha ao atualizar a capa da viagem no banco local');
+    }
+  }
+
+  /** Viagens do usuário com capa ainda em arquivo local (`file://...`). */
+  async findWithPendingLocalCover(userId: string): Promise<Trip[]> {
+    try {
+      const database = getDatabase();
+      const trips = await database
+        .get<Trip>('trips')
+        .query(Q.where('user_id', userId))
+        .fetch();
+
+      return trips.filter((trip) => isLocalCoverUri(trip.coverImage));
+    } catch (error) {
+      throw toRepositoryError(error, 'Falha ao listar capas locais pendentes de upload');
     }
   }
 

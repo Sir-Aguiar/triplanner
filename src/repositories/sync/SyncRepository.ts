@@ -6,6 +6,7 @@ import { getDatabase } from '@/database/client';
 import type Activity from '@/database/models/Activity';
 import type Trip from '@/database/models/Trip';
 import { toRepositoryError } from '@/repositories/errors';
+import { isLocalCoverUri } from '@/utils/cover-image';
 
 export type OwnedTripWithActivities = {
   trip: Trip;
@@ -54,7 +55,10 @@ function applyTripFields(record: Trip, trip: SyncTripResponseDto): void {
   record.travelers = trip.travelers;
   record.startDate = trip.startDate;
   record.endDate = trip.endDate;
-  record.coverImage = trip.coverImage;
+  // Preserva capa local pendente de upload — o snapshot JSON não deve apagar `file://`.
+  if (!isLocalCoverUri(record.coverImage)) {
+    record.coverImage = trip.coverImage;
+  }
   record.totalBudget = trip.totalBudget;
   record.isPublic = trip.isPublic;
   record.userId = trip.userId;

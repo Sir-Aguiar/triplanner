@@ -1,45 +1,36 @@
-import {
-  Fraunces_600SemiBold,
-  Fraunces_700Bold,
-} from '@expo-google-fonts/fraunces';
+import { Fraunces_600SemiBold, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
-} from '@expo-google-fonts/plus-jakarta-sans';
-import {
-  DarkTheme,
-  DefaultTheme,
-  Stack,
-  ThemeProvider,
-  type Theme,
-} from 'expo-router';
-import { DatabaseProvider } from '@nozbe/watermelondb/react';
-import { useFonts } from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, useColorScheme, View } from 'react-native';
+} from "@expo-google-fonts/plus-jakarta-sans";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, type Theme } from "expo-router";
+import { DatabaseProvider } from "@nozbe/watermelondb/react";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { StyleSheet, useColorScheme, View } from "react-native";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import { DatabaseLoadingScreen } from '@/components/database-loading-screen';
-import { ToastProvider } from '@/components/ui/toast';
-import { Colors } from '@/constants/theme';
-import { SessionProvider, useSession } from '@/contexts/session';
-import { getDatabase, initializeDatabase } from '@/database';
-import { useBackgroundSync } from '@/hooks/use-background-sync';
+import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { DatabaseLoadingScreen } from "@/components/database-loading-screen";
+import { ToastProvider } from "@/components/ui/toast";
+import { Colors } from "@/constants/theme";
+import { SessionProvider, useSession } from "@/contexts/session";
+import { getDatabase, initializeDatabase } from "@/database";
+import { useBackgroundSync } from "@/hooks/use-background-sync";
 
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: "(tabs)",
 };
 
-type InitStatus = 'loading' | 'ready' | 'error';
+type InitStatus = "loading" | "ready" | "error";
 
-function createNavigationTheme(scheme: 'light' | 'dark'): Theme {
+function createNavigationTheme(scheme: "light" | "dark"): Theme {
   const colors = Colors[scheme];
-  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const base = scheme === "dark" ? DarkTheme : DefaultTheme;
 
   return {
     ...base,
@@ -63,14 +54,14 @@ function AuthGateStack() {
         name="entrar"
         options={{
           headerShown: true,
-          title: 'Entrar',
+          title: "Entrar",
         }}
       />
       <Stack.Screen
         name="criar-conta"
         options={{
           headerShown: true,
-          title: 'Criar Conta',
+          title: "Criar Conta",
         }}
       />
     </Stack>
@@ -84,8 +75,8 @@ function AppStack() {
       <Stack.Screen
         name="menu"
         options={{
-          presentation: 'transparentModal',
-          animation: 'none',
+          presentation: "transparentModal",
+          animation: "none",
           headerShown: false,
         }}
       />
@@ -93,21 +84,21 @@ function AppStack() {
         name="nova-viagem"
         options={{
           headerShown: true,
-          title: 'Cadastrar viagem',
+          title: "Cadastrar viagem",
         }}
       />
       <Stack.Screen
         name="viagem/[id]"
         options={{
           headerShown: true,
-          title: 'Detalhes da viagem',
+          title: "Detalhes da viagem",
         }}
       />
       <Stack.Screen
         name="welcome"
         options={{
-          presentation: 'formSheet',
-          sheetAllowedDetents: 'fitToContents',
+          presentation: "formSheet",
+          sheetAllowedDetents: "fitToContents",
           sheetGrabberVisible: true,
           sheetCornerRadius: 24,
           gestureEnabled: false,
@@ -118,14 +109,14 @@ function AppStack() {
         name="entrar"
         options={{
           headerShown: true,
-          title: 'Entrar',
+          title: "Entrar",
         }}
       />
       <Stack.Screen
         name="criar-conta"
         options={{
           headerShown: true,
-          title: 'Criar Conta',
+          title: "Criar Conta",
         }}
       />
     </Stack>
@@ -162,9 +153,9 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const scheme = colorScheme === 'dark' ? 'dark' : 'light';
+  const scheme = colorScheme === "dark" ? "dark" : "light";
   const navigationTheme = useMemo(() => createNavigationTheme(scheme), [scheme]);
-  const [status, setStatus] = useState<InitStatus>('loading');
+  const [status, setStatus] = useState<InitStatus>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
@@ -176,18 +167,17 @@ export default function RootLayout() {
   });
 
   const bootstrap = useCallback(async () => {
-    setStatus('loading');
+    setStatus("loading");
     setErrorMessage(null);
 
     try {
       await initializeDatabase();
-      setStatus('ready');
+      setStatus("ready");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Erro desconhecido ao preparar o banco local.';
-      console.error('Falha na inicialização do banco:', error);
+      const message = error instanceof Error ? error.message : "Erro desconhecido ao preparar o banco local.";
+      console.error("Falha na inicialização do banco:", error);
       setErrorMessage(message);
-      setStatus('error');
+      setStatus("error");
     }
   }, []);
 
@@ -196,14 +186,14 @@ export default function RootLayout() {
     bootstrap();
   }, [bootstrap]);
 
-  const appReady = status === 'ready' && (fontsLoaded || Boolean(fontError));
+  const appReady = status === "ready" && (fontsLoaded || Boolean(fontError));
 
   return (
     <ThemeProvider value={navigationTheme}>
       {!appReady ? (
         <DatabaseLoadingScreen
-          errorMessage={status === 'error' ? errorMessage : null}
-          onRetry={status === 'error' ? () => void bootstrap() : undefined}
+          errorMessage={status === "error" ? errorMessage : null}
+          onRetry={status === "error" ? () => void bootstrap() : undefined}
         />
       ) : (
         <DatabaseProvider database={getDatabase()}>
@@ -224,7 +214,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   syncOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 100,
   },
 });
+

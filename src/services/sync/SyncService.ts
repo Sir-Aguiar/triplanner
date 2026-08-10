@@ -5,23 +5,31 @@ import {
   type SyncTripsResponseDto,
 } from '@/dtos';
 import { syncRepository, type SyncRepository } from '@/repositories/sync/SyncRepository';
+import {
+  coverUploadService,
+  type CoverUploadService,
+} from '@/services/trips/CoverUploadService';
 
 export type SyncResult = 'ok' | 'offline' | 'error' | 'skipped' | 'unauthorized';
 
 type SyncServiceDeps = {
   syncRepository?: SyncRepository;
+  coverUploadService?: CoverUploadService;
 };
 
 /**
  * Orquestra upload local → POST /trips/sync → consolidação em batch (RN02–RN04).
+ * Após sync JSON ok, dispara o job isolado de upload de capas locais.
  * Falhas de rede são silenciosas para a UI (RN03).
  */
 export class SyncService {
   private readonly syncRepository: SyncRepository;
+  private readonly coverUploadService: CoverUploadService;
   private inFlight: Promise<SyncResult> | null = null;
 
   constructor(deps: SyncServiceDeps = {}) {
     this.syncRepository = deps.syncRepository ?? syncRepository;
+    this.coverUploadService = deps.coverUploadService ?? coverUploadService;
   }
 
   async syncNow(accessToken: string, userId: string): Promise<SyncResult> {
@@ -49,6 +57,13 @@ export class SyncService {
 
       const serverTrips = Array.isArray(response?.trips) ? response.trips : [];
       await this.syncRepository.applyServerSnapshot(userId, serverTrips);
+
+      // RN02: só após o JSON da Trip existir no backend.
+      try {
+        await this.coverUploadService.uploadPendingCovers(accessToken, userId);
+      } catch (coverError) {
+        console.error('Falha no job de upload de capas:', coverError);
+      }
 
       return 'ok';
     } catch (error) {

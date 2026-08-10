@@ -11,6 +11,7 @@ export type TripDetails = {
   startDate: string;
   endDate: string;
   totalBudget: number;
+  coverImage: string;
 };
 
 function toTripDetails(trip: Trip): TripDetails {
@@ -22,6 +23,7 @@ function toTripDetails(trip: Trip): TripDetails {
     startDate: trip.startDate,
     endDate: trip.endDate,
     totalBudget: trip.totalBudget,
+    coverImage: trip.coverImage,
   };
 }
 
