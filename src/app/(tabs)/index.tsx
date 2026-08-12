@@ -1,39 +1,26 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { useMemo } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { SymbolView } from "expo-symbols";
+import { useMemo } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AtmosphericBackground } from '@/components/atmospheric-background';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { TripCard } from '@/components/trips/trip-card';
-import { Button } from '@/components/ui/button';
-import {
-  BORDER_RADIUS,
-  BottomTabInset,
-  FontFamily,
-  OPACITY,
-  SHADOWS,
-  SPACING,
-  TYPOGRAPHY,
-} from '@/constants/theme';
-import { useSession } from '@/contexts/session';
-import { useTheme } from '@/hooks/use-theme';
-import { useTrips } from '@/hooks/use-trips';
-import { formatDatePtBr } from '@/utils/dates';
+import { AtmosphericBackground } from "@/components/atmospheric-background";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { TripCard } from "@/components/trips/trip-card";
+import { Button } from "@/components/ui/button";
+import { BORDER_RADIUS, BottomTabInset, FontFamily, OPACITY, SHADOWS, SPACING, TYPOGRAPHY } from "@/constants/theme";
+import { useSession } from "@/contexts/session";
+import { useTheme } from "@/hooks/use-theme";
+import { useTrips } from "@/hooks/use-trips";
+import { formatDatePtBr } from "@/utils/dates";
 
 function greetingForNow(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Bom dia';
-  if (hour < 18) return 'Boa tarde';
-  return 'Boa noite';
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
 }
 
 export default function HomeScreen() {
@@ -43,9 +30,7 @@ export default function HomeScreen() {
 
   const { upcoming, nextTrip } = useMemo(() => {
     const now = Date.now();
-    const upcomingTrips = trips
-      .filter((trip) => Date.parse(trip.endDate) >= now)
-      .slice(0, 3);
+    const upcomingTrips = trips.filter((trip) => Date.parse(trip.endDate) >= now).slice(0, 3);
     return {
       upcoming: upcomingTrips,
       nextTrip: upcomingTrips[0] ?? null,
@@ -57,17 +42,15 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <AtmosphericBackground />
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}>
+      <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.heroCopy}>
             <ThemedText themeColor="textSecondary" type="small" style={styles.greeting}>
               {greetingForNow()}
-              {isLoggedIn && firstName ? `, ${firstName}` : ''}
+              {isLoggedIn && firstName ? `, ${firstName}` : ""}
             </ThemedText>
             <ThemedText type="title" style={styles.headline}>
-              Sua próxima{'\n'}aventura
+              Sua próxima{"\n"}aventura
             </ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.subcopy}>
               Organize roteiros, orçamento e momentos em um só lugar.
@@ -75,20 +58,17 @@ export default function HomeScreen() {
           </View>
 
           <LinearGradient
-            colors={[theme.primary, theme.secondary]}
+            colors={[theme.primary, theme.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[styles.heroCard, SHADOWS.medium]}>
+            style={[styles.heroCard, SHADOWS.medium]}
+          >
             {!ready ? (
               <View style={styles.heroPlaceholder} />
             ) : nextTrip ? (
               <>
-                <ThemedText style={[styles.heroEyebrow, { color: theme.textInverse }]}>
-                  Próxima viagem
-                </ThemedText>
-                <ThemedText
-                  style={[styles.heroTitle, { color: theme.textInverse }]}
-                  numberOfLines={2}>
+                <ThemedText style={[styles.heroEyebrow, { color: theme.textInverse }]}>Próxima viagem</ThemedText>
+                <ThemedText style={[styles.heroTitle, { color: theme.textInverse }]} numberOfLines={2}>
                   {nextTrip.title}
                 </ThemedText>
                 <ThemedText style={[styles.heroMeta, { color: theme.textInverse }]}>
@@ -99,40 +79,34 @@ export default function HomeScreen() {
                   accessibilityLabel={`Abrir viagem ${nextTrip.title}`}
                   onPress={() =>
                     router.push({
-                      pathname: '/viagem/[id]',
+                      pathname: "/viagem/[id]",
                       params: { id: nextTrip.id },
                     })
                   }
                   style={({ pressed }) => [
                     styles.heroCta,
                     { backgroundColor: theme.textInverse, opacity: pressed ? OPACITY.pressed : 1 },
-                  ]}>
-                  <ThemedText style={[styles.heroCtaLabel, { color: theme.primary }]}>
-                    Ver detalhes
-                  </ThemedText>
+                  ]}
+                >
+                  <ThemedText style={[styles.heroCtaLabel, { color: theme.primary }]}>Ver detalhes</ThemedText>
                 </Pressable>
               </>
             ) : (
               <>
-                <ThemedText style={[styles.heroEyebrow, { color: theme.textInverse }]}>
-                  Comece por aqui
-                </ThemedText>
-                <ThemedText style={[styles.heroTitle, { color: theme.textInverse }]}>
-                  Ainda sem viagens
-                </ThemedText>
+                <ThemedText style={[styles.heroEyebrow, { color: theme.textInverse }]}>Comece por aqui</ThemedText>
+                <ThemedText style={[styles.heroTitle, { color: theme.textInverse }]}>Ainda sem viagens</ThemedText>
                 <ThemedText style={[styles.heroMeta, { color: theme.textInverse }]}>
                   Cadastre o primeiro roteiro e acompanhe cada dia.
                 </ThemedText>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => router.push('/nova-viagem')}
+                  onPress={() => router.push("/nova-viagem")}
                   style={({ pressed }) => [
                     styles.heroCta,
                     { backgroundColor: theme.accent, opacity: pressed ? OPACITY.pressed : 1 },
-                  ]}>
-                  <ThemedText style={[styles.heroCtaLabel, { color: theme.textInverse }]}>
-                    Nova viagem
-                  </ThemedText>
+                  ]}
+                >
+                  <ThemedText style={[styles.heroCtaLabel, { color: theme.textOnAccent }]}>Nova viagem</ThemedText>
                 </Pressable>
               </>
             )}
@@ -144,8 +118,9 @@ export default function HomeScreen() {
             </ThemedText>
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.push('/(tabs)/viagens')}
-              style={({ pressed }) => pressed && styles.pressed}>
+              onPress={() => router.push("/(tabs)/viagens")}
+              style={({ pressed }) => pressed && styles.pressed}
+            >
               <ThemedText type="linkPrimary">Ver todas</ThemedText>
             </Pressable>
           </View>
@@ -153,13 +128,9 @@ export default function HomeScreen() {
           {!ready ? (
             <View style={styles.listPlaceholder} />
           ) : upcoming.length === 0 ? (
-            <View
-              style={[
-                styles.emptyCard,
-                { backgroundColor: theme.surface, borderColor: theme.border },
-              ]}>
+            <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <SymbolView
-                name={{ ios: 'suitcase', android: 'luggage', web: 'luggage' }}
+                name={{ ios: "suitcase", android: "luggage", web: "luggage" }}
                 size={28}
                 tintColor={theme.secondary}
                 weight="medium"
@@ -167,7 +138,7 @@ export default function HomeScreen() {
               <ThemedText themeColor="textSecondary" style={styles.emptyText}>
                 Quando você cadastrar uma viagem, ela aparece aqui.
               </ThemedText>
-              <Button label="Cadastrar viagem" onPress={() => router.push('/nova-viagem')} />
+              <Button label="Cadastrar viagem" onPress={() => router.push("/nova-viagem")} />
             </View>
           ) : (
             <View style={styles.tripList}>
@@ -177,7 +148,7 @@ export default function HomeScreen() {
                   trip={trip}
                   onPress={(tripId) =>
                     router.push({
-                      pathname: '/viagem/[id]',
+                      pathname: "/viagem/[id]",
                       params: { id: tripId },
                     })
                   }
@@ -197,19 +168,18 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingBottom: BottomTabInset,
   },
   scroll: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xl,
+    paddingBottom: BottomTabInset,
     gap: SPACING.lg,
   },
   heroCopy: {
     gap: SPACING.sm,
   },
   greeting: {
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1.2,
     fontFamily: FontFamily.sansSemibold,
     fontSize: TYPOGRAPHY.sizes.xs,
@@ -225,13 +195,13 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     gap: SPACING.sm,
     minHeight: 188,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   heroEyebrow: {
     fontFamily: FontFamily.sansSemibold,
     fontSize: TYPOGRAPHY.sizes.xs,
     lineHeight: TYPOGRAPHY.lineHeights.xs,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1.1,
     opacity: 0.85,
   },
@@ -248,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   heroCta: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm + 2,
     borderRadius: BORDER_RADIUS.pill,
@@ -259,9 +229,9 @@ const styles = StyleSheet.create({
     lineHeight: TYPOGRAPHY.lineHeights.sm,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.sizes.xl,
@@ -275,10 +245,10 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: SPACING.lg,
     gap: SPACING.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emptyText: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   heroPlaceholder: {
     minHeight: 120,
@@ -290,3 +260,4 @@ const styles = StyleSheet.create({
     opacity: OPACITY.pressed,
   },
 });
+

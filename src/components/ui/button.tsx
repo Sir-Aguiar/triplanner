@@ -40,11 +40,13 @@ export function Button({
           ? theme.surface
           : 'transparent';
   const textColor =
-    variant === 'primary' || variant === 'accent'
+    variant === 'primary'
       ? theme.textInverse
-      : variant === 'secondary'
-        ? theme.textPrimary
-        : theme.primary;
+      : variant === 'accent'
+        ? theme.textOnAccent
+        : variant === 'secondary'
+          ? theme.textPrimary
+          : theme.primary;
   const borderColor = variant === 'secondary' ? theme.border : 'transparent';
   const elevation = variant === 'primary' || variant === 'accent' ? SHADOWS.light : undefined;
 

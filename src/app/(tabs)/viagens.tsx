@@ -86,7 +86,7 @@ export default function ViagensScreen() {
             <SymbolView
               name={{ ios: "plus", android: "add" }}
               size={TYPOGRAPHY.sizes.xl}
-              tintColor={theme.textInverse}
+              tintColor={theme.textOnAccent}
               weight="medium"
             />
           </Pressable>
@@ -140,18 +140,13 @@ export default function ViagensScreen() {
                   Nenhuma viagem ainda
                 </ThemedText>
                 <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-                  Comece do zero ou inspire-se em roteiros da comunidade.
+                  Comece do zero e organize cada dia do seu roteiro.
                 </ThemedText>
                 <View style={styles.emptyActions}>
                   <Button
                     label="Criar minha primeira viagem"
                     variant="accent"
                     onPress={() => router.push("/nova-viagem")}
-                  />
-                  <Button
-                    label="Explorar viagens da comunidade"
-                    variant="secondary"
-                    onPress={() => router.push("/(tabs)/explore")}
                   />
                 </View>
               </View>
@@ -179,7 +174,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingBottom: BottomTabInset,
   },
   header: {
     flexDirection: "row",
@@ -208,7 +202,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingBottom: BottomTabInset,
   },
   listEmpty: {
     flexGrow: 1,

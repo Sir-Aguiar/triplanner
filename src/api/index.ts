@@ -5,6 +5,7 @@ export { setAuthSessionListeners, notifyTokensUpdated, notifyAuthFailed } from '
 export {
   getStoredAccessToken,
   getStoredRefreshToken,
+  getStoredUser,
   setStoredTokens,
   clearStoredAuth,
 } from './token-storage';

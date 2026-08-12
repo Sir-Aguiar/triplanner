@@ -1,56 +1,29 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { SymbolView } from 'expo-symbols';
-import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { SymbolView } from "expo-symbols";
+import { router } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  FormCurrencyInput,
-  FormDateInput,
-  FormNumberInput,
-  FormTextArea,
-  FormTextInput,
-} from '@/components/form';
-import { ActivityFormModal } from '@/components/trips/activity-form-modal';
-import { ActivityTimeline, type ActivityListItem } from '@/components/trips/activity-timeline';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/toast';
-import {
-  BORDER_RADIUS,
-  FontFamily,
-  OPACITY,
-  SPACING,
-  TYPOGRAPHY,
-} from '@/constants/theme';
-import { useSession } from '@/contexts/session';
-import {
-  createTripDefaultValues,
-  createTripSchema,
-  type CreateTripDTO,
-  type CreateTripFormValues,
-} from '@/dtos';
-import { usePendingActivities } from '@/hooks/use-pending-activities';
-import { mapPendingWithCategories } from '@/hooks/use-trip-activities';
-import { useTheme } from '@/hooks/use-theme';
-import { tripService } from '@/services';
-import {
-  clearPendingActivities,
-  removePendingActivity,
-} from '@/stores/pending-activities';
-import { reconcileFormBudget, sumActivityCosts } from '@/utils/budget';
-import { formatCurrencyBrl } from '@/utils/currency';
-import { fromUtcIsoDate } from '@/utils/dates';
+import { FormCurrencyInput, FormDateInput, FormNumberInput, FormTextArea, FormTextInput } from "@/components/form";
+import { ActivityFormModal } from "@/components/trips/activity-form-modal";
+import { ActivityTimeline, type ActivityListItem } from "@/components/trips/activity-timeline";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
+import { BORDER_RADIUS, FontFamily, OPACITY, SPACING, TYPOGRAPHY } from "@/constants/theme";
+import { useSession } from "@/contexts/session";
+import { createTripDefaultValues, createTripSchema, type CreateTripDTO, type CreateTripFormValues } from "@/dtos";
+import { usePendingActivities } from "@/hooks/use-pending-activities";
+import { mapPendingWithCategories } from "@/hooks/use-trip-activities";
+import { useTheme } from "@/hooks/use-theme";
+import { tripService } from "@/services";
+import { clearPendingActivities, removePendingActivity } from "@/stores/pending-activities";
+import { reconcileFormBudget, sumActivityCosts } from "@/utils/budget";
+import { formatCurrencyBrl } from "@/utils/currency";
+import { fromUtcIsoDate } from "@/utils/dates";
 
 export default function NovaViagemScreen() {
   const theme = useTheme();
@@ -84,18 +57,15 @@ export default function NovaViagemScreen() {
   } = useForm<CreateTripFormValues, unknown, CreateTripDTO>({
     resolver: dynamicResolver,
     defaultValues: createTripDefaultValues,
-    mode: 'onSubmit',
+    mode: "onSubmit",
   });
 
-  const startDate = useWatch({ control, name: 'startDate' });
-  const travelersWatch = useWatch({ control, name: 'travelers' });
+  const startDate = useWatch({ control, name: "startDate" });
+  const travelersWatch = useWatch({ control, name: "travelers" });
   const travelers = Math.max(1, Number(travelersWatch) || 1);
   const isBusy = submitting || isSubmitting;
 
-  const activitiesCostSum = useMemo(
-    () => sumActivityCosts(pending, travelers),
-    [pending, travelers],
-  );
+  const activitiesCostSum = useMemo(() => sumActivityCosts(pending, travelers), [pending, travelers]);
 
   useEffect(() => {
     clearPendingActivities();
@@ -136,24 +106,20 @@ export default function NovaViagemScreen() {
       return;
     }
 
-    const nextBudget = reconcileFormBudget(
-      getValues('totalBudget'),
-      previousSum,
-      activitiesCostSum,
-    );
+    const nextBudget = reconcileFormBudget(getValues("totalBudget"), previousSum, activitiesCostSum);
 
     previousActivitiesSumRef.current = activitiesCostSum;
 
-    setValue('totalBudget', nextBudget > 0 ? nextBudget : null, {
+    setValue("totalBudget", nextBudget > 0 ? nextBudget : null, {
       shouldDirty: true,
       shouldValidate: true,
     });
-    clearErrors('totalBudget');
+    clearErrors("totalBudget");
   }, [activitiesCostSum, getValues, setValue, clearErrors]);
 
   const handleDeletePendingActivity = (tempId: string) => {
     removePendingActivity(tempId);
-    showToast('Atividade removida');
+    showToast("Atividade removida");
   };
 
   const onSubmit = handleSubmit(async (data) => {
@@ -164,14 +130,14 @@ export default function NovaViagemScreen() {
     setSubmitting(true);
     try {
       const trip = await tripService.create(data, { userId: user?.userId ?? null });
-      showToast('Viagem criada!');
+      showToast("Viagem criada!");
       router.replace({
-        pathname: '/viagem/[id]',
+        pathname: "/viagem/[id]",
         params: { id: trip.id },
       });
     } catch (error) {
-      console.error('Falha ao criar viagem:', error);
-      showToast('Não foi possível salvar a viagem.');
+      console.error("Falha ao criar viagem:", error);
+      showToast("Não foi possível salvar a viagem.");
     } finally {
       setSubmitting(false);
     }
@@ -180,22 +146,23 @@ export default function NovaViagemScreen() {
   const budgetTooltip =
     activitiesCostSum > 0
       ? `O custo mínimo é ${formatCurrencyBrl(activitiesCostSum)} (soma das atividades). Você pode informar um valor maior.`
-      : 'Este campo não precisa ser preenchido. O custo será calculado conforme você cadastrar atividades.';
+      : "Este campo não precisa ser preenchido. O custo será calculado conforme você cadastrar atividades.";
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+      <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={88}>
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={88}
+        >
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+          >
             <ThemedText themeColor="textSecondary" style={styles.intro}>
-              Informe destino, período e quantidade de pessoas para organizar paradas, atividades e
-              orçamento.
+              Informe destino, período e quantidade de pessoas para organizar paradas, atividades e orçamento.
             </ThemedText>
 
             <View style={styles.fields}>
@@ -209,12 +176,7 @@ export default function NovaViagemScreen() {
                 returnKeyType="next"
               />
 
-              <FormDateInput
-                control={control}
-                name="startDate"
-                label="Data de Início"
-                required
-              />
+              <FormDateInput control={control} name="startDate" label="Data de Início" required />
 
               <FormDateInput
                 control={control}
@@ -240,11 +202,7 @@ export default function NovaViagemScreen() {
                 allowEmpty={activitiesCostSum === 0}
                 placeholder="R$ 0,00"
                 tooltip={budgetTooltip}
-                hint={
-                  activitiesCostSum > 0
-                    ? `Mínimo: ${formatCurrencyBrl(activitiesCostSum)}`
-                    : undefined
-                }
+                hint={activitiesCostSum > 0 ? `Mínimo: ${formatCurrencyBrl(activitiesCostSum)}` : undefined}
               />
 
               <FormTextArea
@@ -256,17 +214,13 @@ export default function NovaViagemScreen() {
               />
             </View>
 
-            <View
-              style={[
-                styles.activityCard,
-                { backgroundColor: theme.surface, borderColor: theme.border },
-              ]}>
+            <View style={[styles.activityCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <View style={styles.activityCopy}>
                 <ThemedText type="smallBold">Atividades</ThemedText>
                 <ThemedText themeColor="textSecondary" type="small">
                   {pending.length > 0
                     ? `${pending.length} atividade(s) pronta(s) para salvar com a viagem.`
-                    : 'Cadastre paradas e passeios desta viagem.'}
+                    : "Cadastre paradas e passeios desta viagem."}
                 </ThemedText>
               </View>
 
@@ -284,14 +238,15 @@ export default function NovaViagemScreen() {
                   styles.activityCta,
                   { backgroundColor: theme.accent },
                   pressed && styles.pressed,
-                ]}>
+                ]}
+              >
                 <SymbolView
-                  name={{ ios: 'plus', android: 'add' }}
+                  name={{ ios: "plus", android: "add" }}
                   size={TYPOGRAPHY.sizes.md}
-                  tintColor={theme.textInverse}
+                  tintColor={theme.textOnAccent}
                   weight="medium"
                 />
-                <ThemedText style={[styles.activityCtaLabel, { color: theme.textInverse }]}>
+                <ThemedText style={[styles.activityCtaLabel, { color: theme.textOnAccent }]}>
                   Adicionar atividade
                 </ThemedText>
               </Pressable>
@@ -299,20 +254,12 @@ export default function NovaViagemScreen() {
           </ScrollView>
 
           <View style={[styles.footer, { borderTopColor: theme.border }]}>
-            <Button
-              label="Salvar Viagem"
-              loading={isBusy}
-              disabled={isBusy}
-              onPress={() => void onSubmit()}
-            />
+            <Button label="Salvar Viagem" loading={isBusy} disabled={isBusy} onPress={() => void onSubmit()} />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      <ActivityFormModal
-        visible={activityModalOpen}
-        onClose={() => setActivityModalOpen(false)}
-      />
+      <ActivityFormModal visible={activityModalOpen} onClose={() => setActivityModalOpen(false)} />
     </ThemedView>
   );
 }
@@ -334,7 +281,7 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   intro: {
-    textAlign: 'left',
+    textAlign: "left",
   },
   fields: {
     gap: SPACING.md,
@@ -352,9 +299,9 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: SPACING.sm,
   },
   activityCtaLabel: {
@@ -372,3 +319,4 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.md,
   },
 });
+

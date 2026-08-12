@@ -14,6 +14,7 @@ type Credentials = {
 
 /**
  * Sincroniza ao abrir (com loading) e ao fechar/ir para background (silencioso).
+ * Mutações (editar/excluir) disparam sync imediato via SyncService.scheduleSyncAfterMutation.
  * Rede indisponível na abertura → toast (RN03).
  */
 export function useBackgroundSync() {

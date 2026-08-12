@@ -73,14 +73,6 @@ function AppStack() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
-        name="menu"
-        options={{
-          presentation: "transparentModal",
-          animation: "none",
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
         name="nova-viagem"
         options={{
           headerShown: true,

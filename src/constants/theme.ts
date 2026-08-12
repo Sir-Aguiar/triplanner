@@ -1,32 +1,34 @@
 /**
- * UI/UX Theme — paleta "Maré Suave"
- * Teal profundo, névoa fresca e âmbar de amanhecer — confortável e distinto.
+ * UI/UX Theme — paleta Oxford Navy + Amber
+ * #000000 · #14213d · #fca311 · #e5e5e5 · #ffffff
  */
 
 import { Platform } from 'react-native';
 
 export const COLORS = {
-  primary: '#1F4E5F',
-  secondary: '#5B8FA6',
-  accent: '#E09F3E',
+  primary: '#14213d',
+  secondary: '#000000',
+  accent: '#fca311',
 
-  background: '#F0F4F7',
-  surface: '#FFFFFF',
+  background: '#ffffff',
+  surface: '#ffffff',
   /** Tom suave no topo de telas (gradiente atmosférico). */
-  atmosphere: '#DCE8EE',
+  atmosphere: '#ffffff',
 
-  textPrimary: '#1A2B34',
-  textSecondary: '#5A6F7A',
-  textTertiary: '#8A9BA5',
-  /** Texto sobre botões primary/accent */
-  textInverse: '#FFFFFF',
+  textPrimary: '#000000',
+  textSecondary: '#14213d',
+  textTertiary: '#14213d',
+  /** Texto sobre botões primary (navy) */
+  textInverse: '#ffffff',
+  /** Texto sobre botões accent (âmbar) */
+  textOnAccent: '#000000',
 
-  success: '#2F9B7A',
-  error: '#D64545',
-  warning: '#C9922A',
-  info: '#4A90B8',
+  success: '#14213d',
+  error: '#000000',
+  warning: '#fca311',
+  info: '#14213d',
 
-  border: '#D5DEE5',
+  border: '#e5e5e5',
 } as const;
 
 export const SPACING = {
@@ -89,16 +91,16 @@ export const BORDER_RADIUS = {
 
 export const SHADOWS = {
   light: {
-    shadowColor: '#1F4E5F',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 2,
   },
   medium: {
-    shadowColor: '#1F4E5F',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.14,
     shadowRadius: 24,
     elevation: 5,
   },
@@ -118,13 +120,14 @@ export const Colors = {
 
     background: COLORS.background,
     surface: COLORS.surface,
-    surfaceMuted: '#E4EBF0',
+    surfaceMuted: '#e5e5e5',
     atmosphere: COLORS.atmosphere,
 
     textPrimary: COLORS.textPrimary,
     textSecondary: COLORS.textSecondary,
     textTertiary: COLORS.textTertiary,
     textInverse: COLORS.textInverse,
+    textOnAccent: COLORS.textOnAccent,
 
     success: COLORS.success,
     error: COLORS.error,
@@ -134,26 +137,27 @@ export const Colors = {
     border: COLORS.border,
   },
   dark: {
-    primary: '#7EB8C9',
-    secondary: '#3D6B7A',
+    primary: '#e5e5e5',
+    secondary: '#14213d',
     accent: COLORS.accent,
 
-    background: '#0C171C',
-    surface: '#152228',
-    surfaceMuted: '#1E3340',
-    atmosphere: '#122028',
+    background: '#000000',
+    surface: '#14213d',
+    surfaceMuted: '#14213d',
+    atmosphere: '#14213d',
 
-    textPrimary: '#F2F7F9',
-    textSecondary: '#9BB0BA',
-    textTertiary: '#6F8692',
-    textInverse: COLORS.textInverse,
+    textPrimary: '#ffffff',
+    textSecondary: '#e5e5e5',
+    textTertiary: '#e5e5e5',
+    textInverse: '#000000',
+    textOnAccent: '#000000',
 
-    success: COLORS.success,
-    error: COLORS.error,
-    warning: COLORS.warning,
-    info: COLORS.info,
+    success: '#e5e5e5',
+    error: '#fca311',
+    warning: COLORS.accent,
+    info: '#e5e5e5',
 
-    border: '#2A4050',
+    border: '#14213d',
   },
 } as const;
 
@@ -177,7 +181,7 @@ export const Fonts = Platform.select({
   },
 });
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+export const BottomTabInset = Platform.select({ ios: 100, android: 108 }) ?? 100;
 export const MaxContentWidth = 800;
 
 export const Theme = {

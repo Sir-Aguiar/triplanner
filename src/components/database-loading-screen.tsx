@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
   },
   retryLabel: {
-    color: COLORS.textInverse,
+    color: COLORS.textOnAccent,
   },
   pressed: {
     opacity: OPACITY.pressed,

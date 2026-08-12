@@ -1,5 +1,6 @@
 import { apiRequest } from '@/api/client';
 import { ApiError } from '@/api/errors';
+import { getStoredAccessToken, getStoredUser } from '@/api/token-storage';
 import {
   mapLocalTripsToSyncPayload,
   type SyncTripsResponseDto,
@@ -42,6 +43,26 @@ export class SyncService {
     });
 
     return this.inFlight;
+  }
+
+  /**
+   * Sync imediato após mutação local quando houver sessão.
+   * Sem login ou sem rede → `skipped`/`offline` (não bloqueia a UI).
+   */
+  async syncIfAuthenticated(): Promise<SyncResult> {
+    const accessToken = await getStoredAccessToken();
+    const user = await getStoredUser();
+
+    if (!accessToken || !user?.userId) {
+      return 'skipped';
+    }
+
+    return this.syncNow(accessToken, user.userId);
+  }
+
+  /** Dispara sync em background após editar/excluir viagem ou atividade. */
+  scheduleSyncAfterMutation(): void {
+    void this.syncIfAuthenticated();
   }
 
   private async runSync(accessToken: string, userId: string): Promise<SyncResult> {

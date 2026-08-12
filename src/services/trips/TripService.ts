@@ -21,6 +21,7 @@ import {
   DEFAULT_PERSISTENCE_MODE,
   type PersistenceMode,
 } from '@/services/persistence';
+import { syncService } from '@/services/sync/SyncService';
 import {
   deleteLocalCoverFile,
   persistCoverImage,
@@ -126,10 +127,12 @@ export class TripService {
       const nextSum = sumActivityCosts(activities, data.travelers);
       const nextBudget = syncBudgetWithSpent(data.totalBudget, nextSum);
 
-      return await this.tripRepository.update(
+      const trip = await this.tripRepository.update(
         tripId,
         toUpdateTripRecord({ ...data, totalBudget: nextBudget }),
       );
+      syncService.scheduleSyncAfterMutation();
+      return trip;
     } catch (error) {
       throw toServiceError(error, 'Não foi possível atualizar a viagem');
     }
@@ -147,6 +150,7 @@ export class TripService {
       if (isLocalCoverUri(previousCover)) {
         await deleteLocalCoverFile(previousCover);
       }
+      syncService.scheduleSyncAfterMutation();
     } catch (error) {
       throw toServiceError(error, 'Não foi possível excluir a viagem');
     }
@@ -182,6 +186,7 @@ export class TripService {
         await deleteLocalCoverFile(previousCover);
       }
 
+      syncService.scheduleSyncAfterMutation();
       return trip;
     } catch (error) {
       throw toServiceError(error, 'Não foi possível definir a capa da viagem');

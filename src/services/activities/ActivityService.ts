@@ -14,6 +14,7 @@ import {
   DEFAULT_PERSISTENCE_MODE,
   type PersistenceMode,
 } from '@/services/persistence';
+import { syncService } from '@/services/sync/SyncService';
 import { resolveActivityTotalCost, syncBudgetWithSpent } from '@/utils/budget';
 
 function resolveEndTime(startTime: string, endTime: string): string {
@@ -92,11 +93,13 @@ export class ActivityService {
       const nextSum = currentSum - oldContribution + newContribution;
       const nextBudget = syncBudgetWithSpent(trip.totalBudget, nextSum);
 
-      return await this.activityRepository.updateAndSyncTripBudget(
+      const updated = await this.activityRepository.updateAndSyncTripBudget(
         activityId,
         toUpdateActivityRecord(data),
         nextBudget,
       );
+      syncService.scheduleSyncAfterMutation();
+      return updated;
     } catch (error) {
       throw toServiceError(error, 'Não foi possível atualizar a atividade');
     }
@@ -120,6 +123,7 @@ export class ActivityService {
       const nextBudget = syncBudgetWithSpent(trip.totalBudget, nextSum);
 
       await this.activityRepository.deleteAndSyncTripBudget(activityId, nextBudget);
+      syncService.scheduleSyncAfterMutation();
     } catch (error) {
       throw toServiceError(error, 'Não foi possível excluir a atividade');
     }

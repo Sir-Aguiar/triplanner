@@ -325,7 +325,7 @@ export default function ViagemDetalhesScreen() {
               <SymbolView
                 name={{ ios: 'plus', android: 'add' }}
                 size={TYPOGRAPHY.sizes.xl}
-                tintColor={theme.textInverse}
+                tintColor={theme.textOnAccent}
                 weight="medium"
               />
             </Pressable>
