@@ -54,3 +54,10 @@ export {
   type SyncTripsDto,
   type SyncTripsResponseDto,
 } from './sync/SyncTripsDTO';
+
+export type {
+  GetPublicFeedQuery,
+  GetPublicFeedResponseDto,
+  PublicFeedAuthorDto,
+  PublicFeedItemDto,
+} from './social/PublicFeedDTO';

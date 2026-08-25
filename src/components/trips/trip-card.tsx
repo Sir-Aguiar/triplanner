@@ -11,14 +11,32 @@ import { resolveCoverImageUri } from "@/utils/cover-image";
 import { formatCurrencyBrl } from "@/utils/currency";
 import { formatTripPeriod } from "@/utils/dates";
 
-type TripCardProps = {
-  trip: TripListItem;
-  onPress: (tripId: string) => void;
-  /** Quando informado, exibe o ícone de clonar (feed público ou viagens próprias). */
-  onClone?: (tripId: string) => void;
+type TripCardAuthor = {
+  name: string;
+  username: string;
 };
 
-export function TripCard({ trip, onPress, onClone }: TripCardProps) {
+type TripCardProps = {
+  trip: TripListItem;
+  onPress?: (tripId: string) => void;
+  /** Quando informado, exibe o ícone de clonar (feed público ou viagens próprias). */
+  onClone?: (tripId: string) => void;
+  /** Autor no feed social (exibe nome / @username). */
+  author?: TripCardAuthor;
+  /** Meta extra sob o período (ex.: "7 dias · 12 atividades"). */
+  meta?: string;
+  /** Esconde o badge pública/privada (útil no feed, onde tudo é público). */
+  hideVisibilityBadge?: boolean;
+};
+
+export function TripCard({
+  trip,
+  onPress,
+  onClone,
+  author,
+  meta,
+  hideVisibilityBadge = false,
+}: TripCardProps) {
   const theme = useTheme();
   const [imageFailed, setImageFailed] = useState(false);
   const coverUri = resolveCoverImageUri(trip.coverImage);
@@ -29,23 +47,21 @@ export function TripCard({ trip, onPress, onClone }: TripCardProps) {
 
   const showCover = Boolean(coverUri) && !imageFailed;
   const visibilityLabel = trip.isPublic ? "Pública" : "Privada";
+  const authorLabel = author
+    ? author.name.trim() || `@${author.username}`
+    : null;
 
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Abrir viagem ${trip.title}, ${visibilityLabel}`}
-      onPress={() => onPress(trip.id)}
-      style={({ pressed }) => [
-        styles.card,
-        SHADOWS.light,
-        {
-          backgroundColor: theme.surface,
-          borderColor: theme.border,
-          transform: [{ scale: pressed ? 0.985 : 1 }],
-          opacity: pressed ? OPACITY.pressed : 1,
-        },
-      ]}
-    >
+  const cardStyle = [
+    styles.card,
+    SHADOWS.light,
+    {
+      backgroundColor: theme.surface,
+      borderColor: theme.border,
+    },
+  ];
+
+  const content = (
+    <>
       <View style={[styles.cover, { backgroundColor: theme.surfaceMuted }]}>
         {showCover && coverUri ? (
           <Image
@@ -88,21 +104,31 @@ export function TripCard({ trip, onPress, onClone }: TripCardProps) {
           </Pressable>
         ) : null}
 
-        <View accessibilityLabel={visibilityLabel} style={[styles.visibilityBadge, { backgroundColor: theme.surface }]}>
-          <SymbolView
-            name={
-              trip.isPublic
-                ? { ios: "globe", android: "public", web: "public" }
-                : { ios: "lock.fill", android: "lock", web: "lock" }
-            }
-            size={14}
-            tintColor={theme.textSecondary}
-            weight="medium"
-          />
-        </View>
+        {!hideVisibilityBadge ? (
+          <View accessibilityLabel={visibilityLabel} style={[styles.visibilityBadge, { backgroundColor: theme.surface }]}>
+            <SymbolView
+              name={
+                trip.isPublic
+                  ? { ios: "globe", android: "public", web: "public" }
+                  : { ios: "lock.fill", android: "lock", web: "lock" }
+              }
+              size={14}
+              tintColor={theme.textSecondary}
+              weight="medium"
+            />
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.body}>
+        {author ? (
+          <ThemedText themeColor="textSecondary" type="small" numberOfLines={1}>
+            {author.name.trim() ? author.name : null}
+            {author.name.trim() && author.username ? " · " : null}
+            {author.username ? `@${author.username}` : null}
+          </ThemedText>
+        ) : null}
+
         <ThemedText type="smallBold" style={styles.title} numberOfLines={2}>
           {trip.title}
         </ThemedText>
@@ -111,10 +137,41 @@ export function TripCard({ trip, onPress, onClone }: TripCardProps) {
           {formatTripPeriod(trip.startDate, trip.endDate)}
         </ThemedText>
 
+        {meta ? (
+          <ThemedText themeColor="textSecondary" type="small">
+            {meta}
+          </ThemedText>
+        ) : null}
+
         <ThemedText themeColor="textSecondary" type="smallBold" style={styles.budget}>
           {trip.totalBudget > 0 ? formatCurrencyBrl(trip.totalBudget) : "Sem orçamento"}
         </ThemedText>
       </View>
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={cardStyle}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={
+        authorLabel
+          ? `Roteiro ${trip.title} por ${authorLabel}`
+          : `Abrir viagem ${trip.title}, ${visibilityLabel}`
+      }
+      onPress={() => onPress(trip.id)}
+      style={({ pressed }) => [
+        ...cardStyle,
+        {
+          transform: [{ scale: pressed ? 0.985 : 1 }],
+          opacity: pressed ? OPACITY.pressed : 1,
+        },
+      ]}
+    >
+      {content}
     </Pressable>
   );
 }

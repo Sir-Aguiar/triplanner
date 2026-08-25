@@ -16,6 +16,7 @@ import {
   removePendingActivityDelete,
   removePendingTripDelete,
 } from '@/stores/pending-deletes';
+import { isInternetReachable } from '@/utils/network';
 
 export type SyncResult = 'ok' | 'offline' | 'error' | 'skipped' | 'unauthorized';
 
@@ -28,11 +29,15 @@ type SyncServiceDeps = {
  * Orquestra upload local → POST /trips/sync → consolidação em batch (RN02–RN04).
  * Após sync JSON ok, dispara o job isolado de upload de capas locais.
  * Falhas de rede são silenciosas para a UI (RN03).
+ *
+ * Mutações autenticadas com internet aguardam este ciclo para manter app e servidor alinhados.
+ * Offline: o dado já está no WatermelonDB; o próximo reconnect/abertura envia o lote.
  */
 export class SyncService {
   private readonly syncRepository: SyncRepository;
   private readonly coverUploadService: CoverUploadService;
-  private inFlight: Promise<SyncResult> | null = null;
+  /** Serializa syncs para não descartar mutações feitas durante um ciclo em andamento. */
+  private syncChain: Promise<void> = Promise.resolve();
 
   constructor(deps: SyncServiceDeps = {}) {
     this.syncRepository = deps.syncRepository ?? syncRepository;
@@ -40,20 +45,22 @@ export class SyncService {
   }
 
   async syncNow(accessToken: string, userId: string): Promise<SyncResult> {
-    if (this.inFlight) {
-      return this.inFlight;
-    }
+    const run = this.syncChain.then(
+      () => this.runSync(accessToken, userId),
+      () => this.runSync(accessToken, userId),
+    );
 
-    this.inFlight = this.runSync(accessToken, userId).finally(() => {
-      this.inFlight = null;
-    });
+    this.syncChain = run.then(
+      () => undefined,
+      () => undefined,
+    );
 
-    return this.inFlight;
+    return run;
   }
 
   /**
-   * Sync imediato após mutação local quando houver sessão.
-   * Sem login ou sem rede → `skipped`/`offline` (não bloqueia a UI).
+   * Sync quando houver sessão. Usado na abertura/fechamento do app e no reconnect.
+   * Sem login → `skipped`. Sem rede o HTTP devolve `offline`.
    */
   async syncIfAuthenticated(): Promise<SyncResult> {
     const accessToken = await getStoredAccessToken();
@@ -66,9 +73,22 @@ export class SyncService {
     return this.syncNow(accessToken, user.userId);
   }
 
-  /** Dispara sync em background após editar/excluir viagem ou atividade. */
+  /**
+   * Após create/update/delete local: se estiver online e autenticado, envia agora
+   * (`POST /trips/sync`, DELETE de viagens, capas) e aplica o snapshot do servidor.
+   * Offline ou convidado → no-op; o dado local permanece até haver internet.
+   */
+  async syncAfterLocalChange(): Promise<SyncResult> {
+    if (!(await isInternetReachable())) {
+      return 'offline';
+    }
+
+    return this.syncIfAuthenticated();
+  }
+
+  /** Dispara sync em background (reconnect / ciclo de vida). Não bloqueia a UI. */
   scheduleSyncAfterMutation(): void {
-    void this.syncIfAuthenticated();
+    void this.syncAfterLocalChange();
   }
 
   private async runSync(accessToken: string, userId: string): Promise<SyncResult> {
@@ -91,6 +111,7 @@ export class SyncService {
         excludeTripIds: pendingTripDeletes,
         excludeActivityIds: pendingActivityDeletes,
       });
+      await this.clearResolvedActivityDeletes(serverTrips, pendingActivityDeletes);
 
       // RN02: só após o JSON da Trip existir no backend.
       try {
@@ -114,7 +135,7 @@ export class SyncService {
     }
   }
 
-  /** Envia DELETE pendente de viagens e atividades que ainda não chegaram ao servidor. */
+  /** Envia DELETE pendente de viagens. Atividades saem no POST /trips/sync da viagem. */
   private async flushPendingDeletes(accessToken: string): Promise<void> {
     const pendingTrips = await getPendingTripDeletes();
 
@@ -138,27 +159,27 @@ export class SyncService {
         console.error(`Falha ao confirmar exclusão remota da viagem ${tripId}:`, error);
       }
     }
+  }
 
-    const pendingActivities = await getPendingActivityDeletes();
+  /**
+   * Se o snapshot do sync já não traz a atividade, o servidor absorveu a exclusão
+   * via POST /trips/sync — o tombstone local pode sair.
+   */
+  private async clearResolvedActivityDeletes(
+    serverTrips: SyncTripsResponseDto['trips'],
+    pendingActivityDeletes: string[],
+  ): Promise<void> {
+    if (pendingActivityDeletes.length === 0) {
+      return;
+    }
 
-    for (const activityId of pendingActivities) {
-      try {
-        await apiRequest(`/activities/${activityId}`, {
-          method: 'DELETE',
-          accessToken,
-        });
+    const returnedActivityIds = new Set(
+      serverTrips.flatMap((trip) => (trip.activities ?? []).map((item) => item.activityId)),
+    );
+
+    for (const activityId of pendingActivityDeletes) {
+      if (!returnedActivityIds.has(activityId)) {
         await removePendingActivityDelete(activityId);
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
-          await removePendingActivityDelete(activityId);
-          continue;
-        }
-
-        if (error instanceof ApiError && error.status === 0) {
-          break;
-        }
-
-        console.error(`Falha ao confirmar exclusão remota da atividade ${activityId}:`, error);
       }
     }
   }

@@ -18,10 +18,6 @@ import {
   type UpdateTripRecord,
 } from '@/repositories';
 import { ServiceError, toServiceError } from '@/services/errors';
-import {
-  DEFAULT_PERSISTENCE_MODE,
-  type PersistenceMode,
-} from '@/services/persistence';
 import { syncService } from '@/services/sync/SyncService';
 import {
   deleteLocalCoverFile,
@@ -38,6 +34,7 @@ import {
 } from '@/stores/pending-deletes';
 import { sumActivityCosts, syncBudgetWithSpent } from '@/utils/budget';
 import { isLocalCoverUri } from '@/utils/cover-image';
+import { isInternetReachable } from '@/utils/network';
 
 function resolveEndTime(startTime: string, endTime: string): string {
   return endTime || startTime;
@@ -58,7 +55,7 @@ function toTripRecord(data: CreateTripDTO, userId: string | null): InsertTripRec
     endDate: data.endDate,
     coverImage: '',
     totalBudget: data.totalBudget,
-    isPublic: false,
+    isPublic: data.isPublic,
     userId,
   };
 }
@@ -71,6 +68,7 @@ function toUpdateTripRecord(data: CreateTripDTO): UpdateTripRecord {
     startDate: data.startDate,
     endDate: data.endDate,
     totalBudget: data.totalBudget,
+    isPublic: data.isPublic,
   };
 }
 
@@ -95,28 +93,24 @@ type TripServiceDeps = {
   tripRepository?: TripRepository;
   activityRepository?: ActivityRepository;
   syncRepository?: SyncRepository;
-  persistenceMode?: PersistenceMode;
 };
 
 export class TripService {
   private readonly tripRepository: TripRepository;
   private readonly activityRepository: ActivityRepository;
   private readonly syncRepository: SyncRepository;
-  private readonly persistenceMode: PersistenceMode;
 
   constructor(deps: TripServiceDeps = {}) {
     this.tripRepository = deps.tripRepository ?? tripRepository;
     this.activityRepository = deps.activityRepository ?? activityRepository;
     this.syncRepository = deps.syncRepository ?? syncRepository;
-    this.persistenceMode = deps.persistenceMode ?? DEFAULT_PERSISTENCE_MODE;
   }
 
   async create(data: CreateTripDTO, options: CreateTripOptions = {}): Promise<Trip> {
     try {
-      if (this.persistenceMode === 'api') {
-        return await this.createRemote(data);
-      }
-      return await this.createLocal(data, options.userId ?? null);
+      const trip = await this.createLocal(data, options.userId ?? null);
+      await syncService.syncAfterLocalChange();
+      return trip;
     } catch (error) {
       throw toServiceError(error, 'Não foi possível cadastrar a viagem');
     }
@@ -124,10 +118,6 @@ export class TripService {
 
   async update(tripId: string, data: CreateTripDTO): Promise<Trip> {
     try {
-      if (this.persistenceMode === 'api') {
-        throw new ServiceError('Atualização remota de viagem ainda não está disponível.');
-      }
-
       const activities = await this.activityRepository.findByTripId(tripId);
       const nextSum = sumActivityCosts(activities, data.travelers);
       const nextBudget = syncBudgetWithSpent(data.totalBudget, nextSum);
@@ -136,7 +126,7 @@ export class TripService {
         tripId,
         toUpdateTripRecord({ ...data, totalBudget: nextBudget }),
       );
-      syncService.scheduleSyncAfterMutation();
+      await syncService.syncAfterLocalChange();
       return trip;
     } catch (error) {
       throw toServiceError(error, 'Não foi possível atualizar a viagem');
@@ -145,13 +135,10 @@ export class TripService {
 
   async delete(tripId: string): Promise<void> {
     try {
-      if (this.persistenceMode === 'api') {
-        throw new ServiceError('Exclusão remota de viagem ainda não está disponível.');
-      }
-
       const trip = await this.tripRepository.findById(tripId);
       const previousCover = trip.coverImage;
       const accessToken = await getStoredAccessToken();
+      const online = accessToken ? await isInternetReachable() : false;
 
       // Marca antes do sync em background poder reaplicar o snapshot do servidor.
       if (accessToken) {
@@ -163,8 +150,9 @@ export class TripService {
         await deleteLocalCoverFile(previousCover);
       }
 
-      if (accessToken) {
+      if (accessToken && online) {
         await this.deleteRemote(tripId, accessToken);
+        await syncService.syncAfterLocalChange();
       }
     } catch (error) {
       throw toServiceError(error, 'Não foi possível excluir a viagem');
@@ -192,7 +180,8 @@ export class TripService {
 
   /**
    * RN01: abre a galeria, copia a imagem para o armazenamento permanente,
-   * grava `file://...` no WatermelonDB e retorna a viagem atualizada (sem spinner de rede).
+   * grava `file://...` no WatermelonDB e retorna a viagem atualizada.
+   * Com internet, o sync envia o JSON e em seguida o PATCH da capa.
    */
   async setCoverFromGallery(tripId: string): Promise<Trip | null> {
     try {
@@ -220,7 +209,7 @@ export class TripService {
         await deleteLocalCoverFile(previousCover);
       }
 
-      syncService.scheduleSyncAfterMutation();
+      await syncService.syncAfterLocalChange();
       return trip;
     } catch (error) {
       throw toServiceError(error, 'Não foi possível definir a capa da viagem');
@@ -287,12 +276,6 @@ export class TripService {
     const trip = await this.tripRepository.insertWithActivities(tripRecord, activityRecords);
     clearPendingActivities();
     return trip;
-  }
-
-  private async createRemote(_data: CreateTripDTO): Promise<Trip> {
-    throw new ServiceError(
-      'Cadastro remoto de viagem ainda não está disponível. Use o modo local.',
-    );
   }
 }
 

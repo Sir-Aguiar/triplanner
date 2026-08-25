@@ -100,6 +100,7 @@ export class TripRepository {
           item.startDate = record.startDate;
           item.endDate = record.endDate;
           item.totalBudget = record.totalBudget;
+          item.isPublic = record.isPublic;
         });
       });
 

@@ -12,6 +12,7 @@ export type TripDetails = {
   endDate: string;
   totalBudget: number;
   coverImage: string;
+  isPublic: boolean;
 };
 
 function toTripDetails(trip: Trip): TripDetails {
@@ -24,6 +25,7 @@ function toTripDetails(trip: Trip): TripDetails {
     endDate: trip.endDate,
     totalBudget: trip.totalBudget,
     coverImage: trip.coverImage,
+    isPublic: trip.isPublic,
   };
 }
 

@@ -8,8 +8,8 @@ type CreateTripSchemaOptions = {
 };
 
 /**
- * Schema do formulário de criação de viagem.
- * Campos de sistema (tripId, isPublic, coverImage, userId, createdAt, updatedAt)
+ * Schema do formulário de criação/edição de viagem.
+ * Campos de sistema (tripId, coverImage, userId, createdAt, updatedAt)
  * são preenchidos no serviço de persistência.
  */
 export function createTripSchema(options: CreateTripSchemaOptions = {}) {
@@ -46,6 +46,7 @@ export function createTripSchema(options: CreateTripSchemaOptions = {}) {
         .nullable()
         .optional()
         .transform((value) => value ?? 0),
+      isPublic: z.boolean().default(false),
     })
     .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
       message: 'A data de término não pode ser anterior ao início',
@@ -75,4 +76,5 @@ export const createTripDefaultValues: CreateTripFormValues = {
   startDate: '',
   endDate: '',
   totalBudget: null,
+  isPublic: false,
 };

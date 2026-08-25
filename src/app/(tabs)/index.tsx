@@ -1,161 +1,235 @@
 import { router } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AtmosphericBackground } from "@/components/atmospheric-background";
+import { CloneTripModal } from "@/components/trips/clone-trip-modal";
+import { TripCard } from "@/components/trips/trip-card";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { TripCard } from "@/components/trips/trip-card";
 import { Button } from "@/components/ui/button";
-import { BORDER_RADIUS, BottomTabInset, FontFamily, OPACITY, SHADOWS, SPACING, TYPOGRAPHY } from "@/constants/theme";
-import { useSession } from "@/contexts/session";
+import {
+  BORDER_RADIUS,
+  BottomTabInset,
+  FontFamily,
+  OPACITY,
+  SHADOWS,
+  SPACING,
+  TYPOGRAPHY,
+} from "@/constants/theme";
+import { useCloneTrip } from "@/hooks/use-clone-trip";
+import { useSocialFeed } from "@/hooks/use-social-feed";
 import { useTheme } from "@/hooks/use-theme";
-import { useTrips } from "@/hooks/use-trips";
-import { formatDatePtBr } from "@/utils/dates";
+import type { PublicFeedItemDto } from "@/dtos";
+import type { TripListItem } from "@/hooks/use-trips";
 
-function greetingForNow(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Bom dia";
-  if (hour < 18) return "Boa tarde";
-  return "Boa noite";
+function toTripListItem(item: PublicFeedItemDto): TripListItem {
+  return {
+    id: item.tripId,
+    title: item.title,
+    description: item.description,
+    travelers: item.travelers,
+    startDate: item.startDate,
+    endDate: item.endDate,
+    coverImage: item.coverImage,
+    totalBudget: item.totalBudget,
+    isPublic: true,
+  };
+}
+
+function formatFeedMeta(item: PublicFeedItemDto): string {
+  const daysLabel = `${item.durationDays} ${item.durationDays === 1 ? "dia" : "dias"}`;
+  const activitiesLabel =
+    item.activityCount === 1 ? "1 atividade" : `${item.activityCount} atividades`;
+  return `${daysLabel} · ${activitiesLabel}`;
 }
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const { user, isLoggedIn } = useSession();
-  const { trips, ready } = useTrips();
+  const {
+    items,
+    loading,
+    refreshing,
+    loadingMore,
+    error,
+    hasMore,
+    isLoggedIn,
+    refresh,
+    loadMore,
+  } = useSocialFeed();
+  const { cloneModalVisible, submitting, requestClone, confirmClone, closeCloneModal } =
+    useCloneTrip();
 
-  const { upcoming, nextTrip } = useMemo(() => {
-    const now = Date.now();
-    const upcomingTrips = trips.filter((trip) => Date.parse(trip.endDate) >= now).slice(0, 3);
-    return {
-      upcoming: upcomingTrips,
-      nextTrip: upcomingTrips[0] ?? null,
-    };
-  }, [trips]);
-
-  const firstName = user?.name?.trim().split(/\s+/)[0];
+  const handleEndReached = useCallback(() => {
+    if (!hasMore || loadingMore || loading || refreshing) {
+      return;
+    }
+    void loadMore();
+  }, [hasMore, loading, loadingMore, loadMore, refreshing]);
 
   return (
     <ThemedView style={styles.container}>
       <AtmosphericBackground />
       <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.heroCopy}>
-            <ThemedText themeColor="textSecondary" type="small" style={styles.greeting}>
-              {greetingForNow()}
-              {isLoggedIn && firstName ? `, ${firstName}` : ""}
-            </ThemedText>
-            <ThemedText type="title" style={styles.headline}>
-              Sua próxima{"\n"}aventura
-            </ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.subcopy}>
-              Organize roteiros, orçamento e momentos em um só lugar.
-            </ThemedText>
-          </View>
-
-          <View style={[styles.heroCard, SHADOWS.medium, { backgroundColor: theme.primary }]}>
-            {!ready ? (
-              <View style={styles.heroPlaceholder} />
-            ) : nextTrip ? (
-              <>
-                <ThemedText style={[styles.heroEyebrow, { color: theme.textInverse }]}>Próxima viagem</ThemedText>
-                <ThemedText style={[styles.heroTitle, { color: theme.textInverse }]} numberOfLines={2}>
-                  {nextTrip.title}
-                </ThemedText>
-                <ThemedText style={[styles.heroMeta, { color: theme.textInverse }]}>
-                  {formatDatePtBr(nextTrip.startDate)} — {formatDatePtBr(nextTrip.endDate)}
-                </ThemedText>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Abrir viagem ${nextTrip.title}`}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/viagem/[id]",
-                      params: { id: nextTrip.id },
-                    })
-                  }
-                  style={({ pressed }) => [
-                    styles.heroCta,
-                    { backgroundColor: theme.textInverse, opacity: pressed ? OPACITY.pressed : 1 },
-                  ]}
-                >
-                  <ThemedText numberOfLines={1} style={[styles.heroCtaLabel, { color: theme.primary }]}>
-                    Ver detalhes
-                  </ThemedText>
-                </Pressable>
-              </>
-            ) : (
-              <>
-                <ThemedText style={[styles.heroEyebrow, { color: theme.textInverse }]}>Comece por aqui</ThemedText>
-                <ThemedText style={[styles.heroTitle, { color: theme.textInverse }]}>Ainda sem viagens</ThemedText>
-                <ThemedText style={[styles.heroMeta, { color: theme.textInverse }]}>
-                  Cadastre o primeiro roteiro e acompanhe cada dia.
-                </ThemedText>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => router.push("/nova-viagem")}
-                  style={({ pressed }) => [
-                    styles.heroCta,
-                    { backgroundColor: theme.accent, opacity: pressed ? OPACITY.pressed : 1 },
-                  ]}
-                >
-                  <ThemedText numberOfLines={1} style={[styles.heroCtaLabel, { color: theme.textOnAccent }]}>
-                    Nova viagem
-                  </ThemedText>
-                </Pressable>
-              </>
-            )}
-          </View>
-
-          <View style={styles.sectionHeader}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Em breve
-            </ThemedText>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push("/(tabs)/viagens")}
-              style={({ pressed }) => pressed && styles.pressed}
-            >
-              <ThemedText type="linkPrimary">Ver todas</ThemedText>
-            </Pressable>
-          </View>
-
-          {!ready ? (
-            <View style={styles.listPlaceholder} />
-          ) : upcoming.length === 0 ? (
-            <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <SymbolView
-                name={{ ios: "suitcase", android: "luggage", web: "luggage" }}
-                size={28}
-                tintColor={theme.secondary}
-                weight="medium"
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.tripId}
+          contentContainerStyle={[
+            styles.listContent,
+            items.length === 0 && styles.listEmpty,
+          ]}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          refreshControl={
+            isLoggedIn ? (
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => {
+                  void refresh();
+                }}
+                tintColor={theme.primary}
+                colors={[theme.primary]}
               />
-              <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-                Quando você cadastrar uma viagem, ela aparece aqui.
-              </ThemedText>
-              <Button label="Cadastrar viagem" onPress={() => router.push("/nova-viagem")} />
-            </View>
-          ) : (
-            <View style={styles.tripList}>
-              {upcoming.map((trip) => (
-                <TripCard
-                  key={trip.id}
-                  trip={trip}
-                  onPress={(tripId) =>
-                    router.push({
-                      pathname: "/viagem/[id]",
-                      params: { id: tripId },
-                    })
-                  }
+            ) : undefined
+          }
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.4}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <View style={styles.headerCopy}>
+                <ThemedText type="title" style={styles.headline}>
+                  Explore
+                </ThemedText>
+                <ThemedText themeColor="textSecondary" style={styles.subcopy}>
+                  Roteiros da comunidade para clonar e adaptar ao seu orçamento.
+                </ThemedText>
+              </View>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Criar minha viagem"
+                onPress={() => router.push("/nova-viagem")}
+                style={({ pressed }) => [
+                  styles.createCta,
+                  SHADOWS.medium,
+                  { backgroundColor: theme.primary, opacity: pressed ? OPACITY.pressed : 1 },
+                ]}
+              >
+                <View style={styles.createCtaIcon}>
+                  <SymbolView
+                    name={{ ios: "plus", android: "add", web: "add" }}
+                    size={22}
+                    tintColor={theme.textInverse}
+                    weight="medium"
+                  />
+                </View>
+                <View style={styles.createCtaCopy}>
+                  <ThemedText style={[styles.createCtaTitle, { color: theme.textInverse }]}>
+                    Criar minha viagem
+                  </ThemedText>
+                  <ThemedText
+                    style={[styles.createCtaSubtitle, { color: theme.textInverse }]}
+                    numberOfLines={2}
+                  >
+                    Monte o roteiro do zero e publique quando quiser.
+                  </ThemedText>
+                </View>
+                <SymbolView
+                  name={{ ios: "chevron.right", android: "chevron_right", web: "chevron_right" }}
+                  size={18}
+                  tintColor={theme.textInverse}
+                  weight="medium"
                 />
-              ))}
+              </Pressable>
+
+              <ThemedText type="subtitle" style={styles.feedTitle}>
+                Feed de viagens
+              </ThemedText>
             </View>
+          }
+          renderItem={({ item }) => (
+            <TripCard
+              trip={toTripListItem(item)}
+              author={item.author}
+              meta={formatFeedMeta(item)}
+              hideVisibilityBadge
+              onClone={(tripId) => {
+                void requestClone(tripId);
+              }}
+            />
           )}
-        </ScrollView>
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footerLoading}>
+                <ActivityIndicator color={theme.primary} />
+              </View>
+            ) : (
+              <View style={styles.footerSpacer} />
+            )
+          }
+          ListEmptyComponent={
+            loading ? (
+              <View style={styles.centeredState}>
+                <ActivityIndicator color={theme.primary} size="large" />
+              </View>
+            ) : (
+              <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <SymbolView
+                  name={{ ios: "globe", android: "public", web: "public" }}
+                  size={32}
+                  tintColor={theme.secondary}
+                  weight="medium"
+                />
+                <ThemedText type="smallBold" style={styles.emptyTitle}>
+                  {!isLoggedIn
+                    ? "Entre para ver o feed"
+                    : error
+                      ? "Não foi possível carregar"
+                      : "Nenhum roteiro por aqui"}
+                </ThemedText>
+                <ThemedText themeColor="textSecondary" style={styles.emptyText}>
+                  {!isLoggedIn
+                    ? "Faça login para explorar viagens públicas de outros viajantes."
+                    : error
+                      ? error
+                      : "Quando a comunidade publicar roteiros, eles aparecem aqui."}
+                </ThemedText>
+                <View style={styles.emptyActions}>
+                  {!isLoggedIn ? (
+                    <Button label="Entrar" variant="accent" onPress={() => router.push("/entrar")} />
+                  ) : error ? (
+                    <Button
+                      label="Tentar de novo"
+                      variant="secondary"
+                      onPress={() => {
+                        void refresh();
+                      }}
+                    />
+                  ) : null}
+                </View>
+              </View>
+            )
+          }
+          showsVerticalScrollIndicator={false}
+        />
       </SafeAreaView>
+
+      <CloneTripModal
+        visible={cloneModalVisible}
+        submitting={submitting}
+        onClose={closeCloneModal}
+        onConfirm={(newStartDate) => {
+          void confirmClone(newStartDate);
+        }}
+      />
     </ThemedView>
   );
 }
@@ -167,95 +241,93 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  scroll: {
+  listContent: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
     paddingBottom: BottomTabInset,
+  },
+  listEmpty: {
+    flexGrow: 1,
+  },
+  header: {
     gap: SPACING.lg,
+    marginBottom: SPACING.md,
   },
-  heroCopy: {
+  headerCopy: {
     gap: SPACING.sm,
-  },
-  greeting: {
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    fontFamily: FontFamily.sansSemibold,
-    fontSize: TYPOGRAPHY.sizes.xs,
   },
   headline: {
     letterSpacing: -0.6,
   },
   subcopy: {
-    maxWidth: 320,
+    maxWidth: 340,
   },
-  heroCard: {
+  createCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
     borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    gap: SPACING.sm,
-    minHeight: 188,
-    justifyContent: "flex-end",
+    padding: SPACING.md + 2,
   },
-  heroEyebrow: {
+  createCtaIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.16)",
+  },
+  createCtaCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  createCtaTitle: {
     fontFamily: FontFamily.sansSemibold,
-    fontSize: TYPOGRAPHY.sizes.xs,
-    lineHeight: TYPOGRAPHY.lineHeights.xs,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-    opacity: 0.85,
+    fontSize: TYPOGRAPHY.sizes.md,
+    lineHeight: TYPOGRAPHY.lineHeights.md,
   },
-  heroTitle: {
-    fontFamily: FontFamily.displaySemibold,
-    fontSize: TYPOGRAPHY.sizes.xxl,
-    lineHeight: TYPOGRAPHY.lineHeights.xxl,
-  },
-  heroMeta: {
+  createCtaSubtitle: {
     fontFamily: FontFamily.sansMedium,
     fontSize: TYPOGRAPHY.sizes.sm,
     lineHeight: TYPOGRAPHY.lineHeights.sm,
-    opacity: 0.9,
-    marginBottom: SPACING.sm,
+    opacity: 0.88,
   },
-  heroCta: {
-    alignSelf: "flex-start",
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.pill,
-  },
-  heroCtaLabel: {
-    fontFamily: FontFamily.sansSemibold,
-    fontSize: TYPOGRAPHY.sizes.sm,
-    lineHeight: TYPOGRAPHY.lineHeights.sm,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-  },
-  sectionTitle: {
+  feedTitle: {
     fontSize: TYPOGRAPHY.sizes.xl,
     lineHeight: TYPOGRAPHY.lineHeights.xl,
   },
-  tripList: {
-    gap: SPACING.md,
+  separator: {
+    height: SPACING.md,
+  },
+  footerLoading: {
+    paddingVertical: SPACING.lg,
+    alignItems: "center",
+  },
+  footerSpacer: {
+    height: SPACING.sm,
+  },
+  centeredState: {
+    paddingVertical: SPACING.xxl,
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyCard: {
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    padding: SPACING.lg,
-    gap: SPACING.md,
+    padding: SPACING.xl,
+    gap: SPACING.sm,
     alignItems: "center",
+  },
+  emptyTitle: {
+    textAlign: "center",
+    marginTop: SPACING.xs,
   },
   emptyText: {
     textAlign: "center",
   },
-  heroPlaceholder: {
-    minHeight: 120,
-  },
-  listPlaceholder: {
-    minHeight: 48,
-  },
-  pressed: {
-    opacity: OPACITY.pressed,
+  emptyActions: {
+    width: "100%",
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
   },
 });
-

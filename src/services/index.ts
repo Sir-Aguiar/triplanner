@@ -8,3 +8,4 @@ export {
 export { ActivityService, activityService } from './activities/ActivityService';
 export { AuthService, authService } from './auth/AuthService';
 export { SyncService, syncService, type SyncResult } from './sync/SyncService';
+export { SocialService, socialService } from './social/SocialService';

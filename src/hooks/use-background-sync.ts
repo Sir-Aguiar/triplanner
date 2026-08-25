@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
+import * as Network from 'expo-network';
 
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/contexts/session';
 import { syncService, tripService } from '@/services';
+import { isNetworkStateOnline } from '@/utils/network';
 
 const OFFLINE_TOAST = 'Você continuará em modo offline.';
 
@@ -13,9 +15,8 @@ type Credentials = {
 };
 
 /**
- * Sincroniza ao abrir (com loading) e ao fechar/ir para background (silencioso).
- * Mutações (editar/excluir) disparam sync imediato via SyncService.scheduleSyncAfterMutation.
- * Rede indisponível na abertura → toast (RN03).
+ * Sincroniza ao abrir (com loading), ao ir para background e ao recuperar a internet.
+ * Mutações autenticadas com rede aguardam `syncAfterLocalChange` (app e servidor alinhados).
  */
 export function useBackgroundSync() {
   const { isLoggedIn, isLoading, session, user } = useSession();
@@ -69,7 +70,7 @@ export function useBackgroundSync() {
     }
   }, [showToast]);
 
-  const runCloseSync = useCallback(() => {
+  const runSilentSync = useCallback(() => {
     const creds = credentialsRef.current;
     if (!creds) {
       return;
@@ -79,7 +80,7 @@ export function useBackgroundSync() {
       try {
         await tripService.claimOrphanTrips(creds.userId);
       } catch (error) {
-        console.error('Falha ao vincular viagens órfãs antes do sync de fechamento:', error);
+        console.error('Falha ao vincular viagens órfãs antes do sync silencioso:', error);
         return;
       }
 
@@ -106,12 +107,40 @@ export function useBackgroundSync() {
       }
 
       if (nextState === 'background') {
-        runCloseSync();
+        runSilentSync();
       }
     });
 
     return () => subscription.remove();
-  }, [runCloseSync, runOpenSync]);
+  }, [runSilentSync, runOpenSync]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    let previousOnline: boolean | null = null;
+
+    void Network.getNetworkStateAsync()
+      .then((state) => {
+        previousOnline = isNetworkStateOnline(state);
+      })
+      .catch(() => {
+        previousOnline = true;
+      });
+
+    const subscription = Network.addNetworkStateListener((state) => {
+      const online = isNetworkStateOnline(state);
+      const wasOffline = previousOnline === false;
+      previousOnline = online;
+
+      if (online && wasOffline) {
+        runSilentSync();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [isAuthenticated, runSilentSync]);
 
   const isSyncingOnOpen = isAuthenticated && (!hasCompletedOpenSync || isOpenSyncInProgress);
 

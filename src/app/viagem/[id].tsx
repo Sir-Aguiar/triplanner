@@ -180,10 +180,17 @@ export default function ViagemDetalhesScreen() {
                   <ThemedText style={[styles.heroMeta, { color: theme.textInverse }]}>
                     {formatDatePtBr(trip.startDate)} — {formatDatePtBr(trip.endDate)}
                   </ThemedText>
-                  <View style={[styles.heroChip, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
-                    <ThemedText style={[styles.heroChipText, { color: theme.textInverse }]}>
-                      {trip.travelers} {trip.travelers === 1 ? 'viajante' : 'viajantes'}
-                    </ThemedText>
+                  <View style={styles.heroChips}>
+                    <View style={[styles.heroChip, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
+                      <ThemedText style={[styles.heroChipText, { color: theme.textInverse }]}>
+                        {trip.travelers} {trip.travelers === 1 ? 'viajante' : 'viajantes'}
+                      </ThemedText>
+                    </View>
+                    <View style={[styles.heroChip, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
+                      <ThemedText style={[styles.heroChipText, { color: theme.textInverse }]}>
+                        {trip.isPublic ? 'Pública' : 'Privada'}
+                      </ThemedText>
+                    </View>
                   </View>
                 </View>
 
@@ -321,6 +328,7 @@ export default function ViagemDetalhesScreen() {
                 startDate: trip.startDate,
                 endDate: trip.endDate,
                 totalBudget: trip.totalBudget,
+                isPublic: trip.isPublic,
               }}
               activitiesCostSum={spentTotal}
               onClose={() => setTripModalOpen(false)}
@@ -380,9 +388,14 @@ const styles = StyleSheet.create({
     lineHeight: TYPOGRAPHY.lineHeights.sm,
     opacity: 0.92,
   },
+  heroChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginTop: SPACING.xs,
+  },
   heroChip: {
     alignSelf: 'flex-start',
-    marginTop: SPACING.xs,
     paddingHorizontal: SPACING.sm + 2,
     paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.pill,

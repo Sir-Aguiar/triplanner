@@ -6,7 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { FormCurrencyInput, FormDateInput, FormNumberInput, FormTextArea, FormTextInput } from "@/components/form";
+import { FormCurrencyInput, FormDateInput, FormNumberInput, FormSwitch, FormTextArea, FormTextInput } from "@/components/form";
 import { ActivityFormModal } from "@/components/trips/activity-form-modal";
 import { ActivityTimeline, type ActivityListItem } from "@/components/trips/activity-timeline";
 import { ThemedText } from "@/components/themed-text";
@@ -211,6 +211,13 @@ export default function NovaViagemScreen() {
                 label="Descrição / Anotações"
                 placeholder="Notas sobre a viagem, preferências, etc."
                 hint="Opcional"
+              />
+
+              <FormSwitch
+                control={control}
+                name="isPublic"
+                label="Viagem pública"
+                description="Outras pessoas poderão ver e clonar este roteiro no feed."
               />
             </View>
 

@@ -21,6 +21,7 @@ export type UpdateTripRecord = {
   startDate: string;
   endDate: string;
   totalBudget: number;
+  isPublic: boolean;
 };
 
 /** Registro pronto para inserção local de atividade. */

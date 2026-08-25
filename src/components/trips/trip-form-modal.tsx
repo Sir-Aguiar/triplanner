@@ -15,6 +15,7 @@ import {
   FormCurrencyInput,
   FormDateInput,
   FormNumberInput,
+  FormSwitch,
   FormTextArea,
   FormTextInput,
 } from '@/components/form';
@@ -41,6 +42,7 @@ export type TripFormInitialValues = {
   startDate: string;
   endDate: string;
   totalBudget: number;
+  isPublic: boolean;
 };
 
 type TripFormModalProps = {
@@ -60,6 +62,7 @@ function toFormValues(trip: TripFormInitialValues): CreateTripFormValues {
     startDate: trip.startDate,
     endDate: trip.endDate,
     totalBudget: trip.totalBudget > 0 ? trip.totalBudget : null,
+    isPublic: trip.isPublic,
   };
 }
 
@@ -217,6 +220,13 @@ export function TripFormModal({
                 label="Descrição / Anotações"
                 placeholder="Notas sobre a viagem..."
                 hint="Opcional"
+              />
+
+              <FormSwitch
+                control={control}
+                name="isPublic"
+                label="Viagem pública"
+                description="Outras pessoas poderão ver e clonar este roteiro no feed."
               />
             </ScrollView>
 

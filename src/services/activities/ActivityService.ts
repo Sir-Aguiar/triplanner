@@ -1,5 +1,3 @@
-import { apiRequest } from '@/api/client';
-import { ApiError } from '@/api/errors';
 import { getStoredAccessToken } from '@/api/token-storage';
 import type { CreateActivityDTO } from '@/dtos';
 import type Activity from '@/database/models/Activity';
@@ -12,16 +10,9 @@ import {
   type TripRepository,
   type UpdateActivityRecord,
 } from '@/repositories';
-import { ServiceError, toServiceError } from '@/services/errors';
-import {
-  DEFAULT_PERSISTENCE_MODE,
-  type PersistenceMode,
-} from '@/services/persistence';
+import { toServiceError } from '@/services/errors';
 import { syncService } from '@/services/sync/SyncService';
-import {
-  addPendingActivityDelete,
-  removePendingActivityDelete,
-} from '@/stores/pending-deletes';
+import { addPendingActivityDelete } from '@/stores/pending-deletes';
 import { resolveActivityTotalCost, syncBudgetWithSpent } from '@/utils/budget';
 
 function resolveEndTime(startTime: string, endTime: string): string {
@@ -57,26 +48,22 @@ function toUpdateActivityRecord(data: CreateActivityDTO): UpdateActivityRecord {
 type ActivityServiceDeps = {
   activityRepository?: ActivityRepository;
   tripRepository?: TripRepository;
-  persistenceMode?: PersistenceMode;
 };
 
 export class ActivityService {
   private readonly activityRepository: ActivityRepository;
   private readonly tripRepository: TripRepository;
-  private readonly persistenceMode: PersistenceMode;
 
   constructor(deps: ActivityServiceDeps = {}) {
     this.activityRepository = deps.activityRepository ?? activityRepository;
     this.tripRepository = deps.tripRepository ?? tripRepository;
-    this.persistenceMode = deps.persistenceMode ?? DEFAULT_PERSISTENCE_MODE;
   }
 
   async create(tripId: string, data: CreateActivityDTO): Promise<Activity> {
     try {
-      if (this.persistenceMode === 'api') {
-        return await this.createRemote(tripId, data);
-      }
-      return await this.createLocal(tripId, data);
+      const activity = await this.createLocal(tripId, data);
+      await syncService.syncAfterLocalChange();
+      return activity;
     } catch (error) {
       throw toServiceError(error, 'Não foi possível cadastrar a atividade');
     }
@@ -84,10 +71,6 @@ export class ActivityService {
 
   async update(activityId: string, data: CreateActivityDTO): Promise<Activity> {
     try {
-      if (this.persistenceMode === 'api') {
-        throw new ServiceError('Atualização remota de atividade ainda não está disponível.');
-      }
-
       const activity = await this.activityRepository.findById(activityId);
       const relatedTrip = await activity.trip.fetch();
       const tripId = relatedTrip.id;
@@ -105,7 +88,7 @@ export class ActivityService {
         toUpdateActivityRecord(data),
         nextBudget,
       );
-      syncService.scheduleSyncAfterMutation();
+      await syncService.syncAfterLocalChange();
       return updated;
     } catch (error) {
       throw toServiceError(error, 'Não foi possível atualizar a atividade');
@@ -114,10 +97,6 @@ export class ActivityService {
 
   async delete(activityId: string): Promise<void> {
     try {
-      if (this.persistenceMode === 'api') {
-        throw new ServiceError('Exclusão remota de atividade ainda não está disponível.');
-      }
-
       const activity = await this.activityRepository.findById(activityId);
       const relatedTrip = await activity.trip.fetch();
       const tripId = relatedTrip.id;
@@ -131,35 +110,15 @@ export class ActivityService {
 
       const accessToken = await getStoredAccessToken();
       if (accessToken) {
+        // Tombstone: o snapshot de um sync em voo não deve recriar a atividade.
+        // A remoção no servidor acontece no POST /trips/sync da viagem (sem DELETE /activities).
         await addPendingActivityDelete(activityId);
       }
 
       await this.activityRepository.deleteAndSyncTripBudget(activityId, nextBudget);
-
-      if (accessToken) {
-        await this.deleteRemote(activityId, accessToken);
-      }
+      await syncService.syncAfterLocalChange();
     } catch (error) {
       throw toServiceError(error, 'Não foi possível excluir a atividade');
-    }
-  }
-
-  /** DELETE /activities/:activityId. Sem rede ou erro recuperável → permanece na fila do próximo sync. */
-  private async deleteRemote(activityId: string, accessToken: string): Promise<void> {
-    try {
-      await apiRequest(`/activities/${activityId}`, {
-        method: 'DELETE',
-        accessToken,
-      });
-      await removePendingActivityDelete(activityId);
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        await removePendingActivityDelete(activityId);
-        return;
-      }
-
-      await addPendingActivityDelete(activityId);
-      console.error('Falha ao excluir atividade no servidor:', error);
     }
   }
 
@@ -174,6 +133,7 @@ export class ActivityService {
 
       if (nextBudget !== trip.totalBudget) {
         await this.tripRepository.updateTotalBudget(tripId, nextBudget);
+        await syncService.syncAfterLocalChange();
       }
 
       return nextBudget;
@@ -192,12 +152,6 @@ export class ActivityService {
     const record = toActivityRecord(tripId, data);
 
     return this.activityRepository.insertAndUpdateTripBudget(record, nextBudget);
-  }
-
-  private async createRemote(_tripId: string, _data: CreateActivityDTO): Promise<Activity> {
-    throw new ServiceError(
-      'Cadastro remoto de atividade ainda não está disponível. Use o modo local.',
-    );
   }
 }
 
