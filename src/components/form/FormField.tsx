@@ -73,13 +73,14 @@ export function FormField({
           transparent
           visible={tooltipOpen}
           onRequestClose={() => setTooltipOpen(false)}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Fechar informação"
-            onPress={() => setTooltipOpen(false)}
-            style={styles.tooltipBackdrop}>
+          <View style={styles.tooltipBackdrop}>
             <Pressable
-              onPress={(event) => event.stopPropagation()}
+              accessibilityRole="button"
+              accessibilityLabel="Fechar informação"
+              onPress={() => setTooltipOpen(false)}
+              style={StyleSheet.absoluteFill}
+            />
+            <View
               style={[
                 styles.tooltipCard,
                 {
@@ -93,8 +94,8 @@ export function FormField({
               <ThemedText themeColor="textSecondary" style={styles.tooltipBody}>
                 {tooltip}
               </ThemedText>
-            </Pressable>
-          </Pressable>
+            </View>
+          </View>
         </Modal>
       ) : null}
     </View>
@@ -149,6 +150,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     gap: SPACING.sm,
+    zIndex: 1,
   },
   tooltipTitle: {
     fontSize: TYPOGRAPHY.sizes.md,

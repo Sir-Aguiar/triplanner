@@ -12,7 +12,6 @@ export const COLORS = {
 
   background: '#ffffff',
   surface: '#ffffff',
-  /** Tom suave no topo de telas (gradiente atmosférico). */
   atmosphere: '#ffffff',
 
   textPrimary: '#000000',
@@ -25,6 +24,7 @@ export const COLORS = {
 
   success: '#14213d',
   error: '#000000',
+  destructive: '#dc2626',
   warning: '#fca311',
   info: '#14213d',
 
@@ -131,6 +131,7 @@ export const Colors = {
 
     success: COLORS.success,
     error: COLORS.error,
+    destructive: COLORS.destructive,
     warning: COLORS.warning,
     info: COLORS.info,
 
@@ -154,6 +155,7 @@ export const Colors = {
 
     success: '#e5e5e5',
     error: '#fca311',
+    destructive: COLORS.destructive,
     warning: COLORS.accent,
     info: '#e5e5e5',
 

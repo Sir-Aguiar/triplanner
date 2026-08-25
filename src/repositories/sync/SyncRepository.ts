@@ -142,20 +142,32 @@ export class SyncRepository {
 
   /**
    * Substitui o conjunto do usuário pelo snapshot do servidor em uma única transação.
+   * IDs em `exclude*` têm exclusão remota pendente — não recriar a partir do snapshot.
    */
-  async applyServerSnapshot(userId: string, serverTrips: SyncTripResponseDto[]): Promise<void> {
+  async applyServerSnapshot(
+    userId: string,
+    serverTrips: SyncTripResponseDto[],
+    options: {
+      excludeTripIds?: Iterable<string>;
+      excludeActivityIds?: Iterable<string>;
+    } = {},
+  ): Promise<void> {
     try {
       const database = getDatabase();
       const tripsCollection = database.get<Trip>('trips');
       const activitiesCollection = database.get<Activity>('activities');
 
+      const excludedTripIds = new Set(options.excludeTripIds ?? []);
+      const excludedActivityIds = new Set(options.excludeActivityIds ?? []);
+      const tripsToApply = serverTrips.filter((trip) => !excludedTripIds.has(trip.tripId));
+
       const ownedTrips = await tripsCollection.query(Q.where('user_id', userId)).fetch();
       const ownedTripIds = new Set(ownedTrips.map((trip) => trip.id));
-      const serverTripIds = new Set(serverTrips.map((trip) => trip.tripId));
+      const serverTripIds = new Set(tripsToApply.map((trip) => trip.tripId));
 
       const existingTripsById = new Map(ownedTrips.map((trip) => [trip.id, trip]));
 
-      for (const serverTrip of serverTrips) {
+      for (const serverTrip of tripsToApply) {
         if (existingTripsById.has(serverTrip.tripId)) {
           continue;
         }
@@ -168,7 +180,7 @@ export class SyncRepository {
 
       const tripIdsForActivities = new Set<string>([
         ...ownedTripIds,
-        ...serverTrips.map((trip) => trip.tripId),
+        ...tripsToApply.map((trip) => trip.tripId),
         ...existingTripsById.keys(),
       ]);
 
@@ -193,7 +205,7 @@ export class SyncRepository {
       const destroyedActivityIds = new Set<string>();
       const destroyedTripIds = new Set<string>();
 
-      for (const serverTrip of serverTrips) {
+      for (const serverTrip of tripsToApply) {
         const existingTrip = existingTripsById.get(serverTrip.tripId);
         if (existingTrip) {
           batch.push(
@@ -205,9 +217,12 @@ export class SyncRepository {
           batch.push(tripsCollection.prepareCreateFromDirtyRaw(tripDirtyRaw(serverTrip)));
         }
 
-        const serverActivityIds = new Set(serverTrip.activities.map((item) => item.activityId));
+        const serverActivities = serverTrip.activities.filter(
+          (item) => !excludedActivityIds.has(item.activityId),
+        );
+        const serverActivityIds = new Set(serverActivities.map((item) => item.activityId));
 
-        for (const serverActivity of serverTrip.activities) {
+        for (const serverActivity of serverActivities) {
           let existingActivity = activitiesById.get(serverActivity.activityId);
           if (!existingActivity) {
             try {

@@ -1,5 +1,4 @@
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -23,6 +22,7 @@ import { BudgetSummary } from '@/components/trips/budget-summary';
 import { TripFormModal } from '@/components/trips/trip-form-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { HoldToDeleteButton } from '@/components/ui/hold-to-delete-button';
 import { useToast } from '@/components/ui/toast';
 import {
   BORDER_RADIUS,
@@ -62,23 +62,6 @@ export default function ViagemDetalhesScreen() {
   useEffect(() => {
     setCoverFailed(false);
   }, [trip?.coverImage]);
-
-  const confirmDeleteTrip = () => {
-    Alert.alert(
-      'Excluir viagem',
-      'Tem certeza que deseja excluir? Esta ação não pode ser desfeita.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: () => {
-            void handleDeleteTrip();
-          },
-        },
-      ],
-    );
-  };
 
   const confirmDeleteActivity = (activity: ActivityListItem) => {
     Alert.alert(
@@ -183,18 +166,12 @@ export default function ViagemDetalhesScreen() {
                     onError={() => setCoverFailed(true)}
                   />
                 ) : (
-                  <LinearGradient
-                    colors={[theme.primary, theme.secondary]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={StyleSheet.absoluteFill}
-                  />
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.primary }]} />
                 )}
 
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.55)']}
-                  style={styles.heroScrim}
-                />
+                {showCover ? (
+                  <View style={[styles.heroScrim, { backgroundColor: 'rgba(0,0,0,0.4)' }]} />
+                ) : null}
 
                 <View style={styles.heroContent}>
                   <ThemedText style={[styles.heroTitle, { color: theme.textInverse }]}>
@@ -228,7 +205,7 @@ export default function ViagemDetalhesScreen() {
                     tintColor={theme.textSecondary}
                     weight="medium"
                   />
-                  <ThemedText type="smallBold" themeColor="textSecondary">
+                  <ThemedText type="smallBold" themeColor="textSecondary" numberOfLines={1}>
                     {showCover ? 'Alterar capa' : 'Adicionar capa'}
                   </ThemedText>
                 </Pressable>
@@ -256,25 +233,19 @@ export default function ViagemDetalhesScreen() {
                     },
                     pressed && styles.pressed,
                   ]}>
-                  <ThemedText type="smallBold">Editar</ThemedText>
-                </Pressable>
-
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={confirmDeleteTrip}
-                  disabled={busy}
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    {
-                      backgroundColor: theme.surface,
-                      borderColor: theme.error,
-                    },
-                    pressed && styles.pressed,
-                  ]}>
-                  <ThemedText type="smallBold" style={{ color: theme.error }}>
-                    Excluir
+                  <ThemedText type="smallBold" numberOfLines={1}>
+                    Editar
                   </ThemedText>
                 </Pressable>
+
+                <HoldToDeleteButton
+                  label="Excluir"
+                  disabled={busy}
+                  onHoldComplete={() => {
+                    void handleDeleteTrip();
+                  }}
+                  style={styles.deleteButton}
+                />
               </View>
 
               {trip.description ? (
@@ -446,6 +417,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: SPACING.sm,
+  },
+  deleteButton: {
+    flex: 1,
   },
   descriptionCard: {
     borderRadius: BORDER_RADIUS.lg,

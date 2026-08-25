@@ -63,14 +63,15 @@ export function CloneTripModal({
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Fechar"
-          disabled={isBusy}
-          onPress={onClose}
-          style={[styles.backdrop, { backgroundColor: 'rgba(15, 23, 42, 0.45)' }]}>
+        <View style={[styles.backdrop, { backgroundColor: 'rgba(15, 23, 42, 0.45)' }]}>
           <Pressable
-            onPress={(event) => event.stopPropagation()}
+            accessibilityRole="button"
+            accessibilityLabel="Fechar"
+            disabled={isBusy}
+            onPress={onClose}
+            style={StyleSheet.absoluteFill}
+          />
+          <View
             style={[
               styles.sheet,
               {
@@ -107,8 +108,8 @@ export function CloneTripModal({
                 style={styles.footerButton}
               />
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -129,6 +130,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     paddingTop: SPACING.lg,
     gap: SPACING.md,
+    zIndex: 1,
   },
   header: {
     paddingHorizontal: SPACING.lg,

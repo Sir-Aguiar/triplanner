@@ -5,12 +5,13 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from "@expo-google-fonts/plus-jakarta-sans";
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, type Theme } from "expo-router";
+import { DefaultTheme, Stack, ThemeProvider, type Theme } from "expo-router";
 import { DatabaseProvider } from "@nozbe/watermelondb/react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { StyleSheet, useColorScheme, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { DatabaseLoadingScreen } from "@/components/database-loading-screen";
@@ -19,6 +20,7 @@ import { Colors } from "@/constants/theme";
 import { SessionProvider, useSession } from "@/contexts/session";
 import { getDatabase, initializeDatabase } from "@/database";
 import { useBackgroundSync } from "@/hooks/use-background-sync";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,7 +32,7 @@ type InitStatus = "loading" | "ready" | "error";
 
 function createNavigationTheme(scheme: "light" | "dark"): Theme {
   const colors = Colors[scheme];
-  const base = scheme === "dark" ? DarkTheme : DefaultTheme;
+  const base = DefaultTheme;
 
   return {
     ...base,
@@ -182,6 +184,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={navigationTheme}>
+      <StatusBar style="light" />
       {!appReady ? (
         <DatabaseLoadingScreen
           errorMessage={status === "error" ? errorMessage : null}
@@ -191,8 +194,8 @@ export default function RootLayout() {
         <DatabaseProvider database={getDatabase()}>
           <SessionProvider>
             <ToastProvider>
-              <AnimatedSplashOverlay />
               <RootNavigator />
+              <AnimatedSplashOverlay />
             </ToastProvider>
           </SessionProvider>
         </DatabaseProvider>

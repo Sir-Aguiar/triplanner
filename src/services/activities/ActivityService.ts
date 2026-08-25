@@ -1,3 +1,6 @@
+import { apiRequest } from '@/api/client';
+import { ApiError } from '@/api/errors';
+import { getStoredAccessToken } from '@/api/token-storage';
 import type { CreateActivityDTO } from '@/dtos';
 import type Activity from '@/database/models/Activity';
 import { createUuidV4 } from '@/database/uuid';
@@ -15,6 +18,10 @@ import {
   type PersistenceMode,
 } from '@/services/persistence';
 import { syncService } from '@/services/sync/SyncService';
+import {
+  addPendingActivityDelete,
+  removePendingActivityDelete,
+} from '@/stores/pending-deletes';
 import { resolveActivityTotalCost, syncBudgetWithSpent } from '@/utils/budget';
 
 function resolveEndTime(startTime: string, endTime: string): string {
@@ -122,10 +129,37 @@ export class ActivityService {
       const nextSum = currentSum - contribution;
       const nextBudget = syncBudgetWithSpent(trip.totalBudget, nextSum);
 
+      const accessToken = await getStoredAccessToken();
+      if (accessToken) {
+        await addPendingActivityDelete(activityId);
+      }
+
       await this.activityRepository.deleteAndSyncTripBudget(activityId, nextBudget);
-      syncService.scheduleSyncAfterMutation();
+
+      if (accessToken) {
+        await this.deleteRemote(activityId, accessToken);
+      }
     } catch (error) {
       throw toServiceError(error, 'Não foi possível excluir a atividade');
+    }
+  }
+
+  /** DELETE /activities/:activityId. Sem rede ou erro recuperável → permanece na fila do próximo sync. */
+  private async deleteRemote(activityId: string, accessToken: string): Promise<void> {
+    try {
+      await apiRequest(`/activities/${activityId}`, {
+        method: 'DELETE',
+        accessToken,
+      });
+      await removePendingActivityDelete(activityId);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        await removePendingActivityDelete(activityId);
+        return;
+      }
+
+      await addPendingActivityDelete(activityId);
+      console.error('Falha ao excluir atividade no servidor:', error);
     }
   }
 

@@ -2,10 +2,11 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AtmosphericBackground } from "@/components/atmospheric-background";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/button";
-import { BORDER_RADIUS, FontFamily, SPACING, TYPOGRAPHY } from "@/constants/theme";
+import { FontFamily, SPACING, TYPOGRAPHY } from "@/constants/theme";
 import { useSession } from "@/contexts/session";
 
 export default function WelcomeModal() {
@@ -13,59 +14,63 @@ export default function WelcomeModal() {
   const insets = useSafeAreaInsets();
 
   return (
-    <ThemedView
-      type="surface"
-      style={[
-        styles.sheet,
-        {
-          flex: 1,
-          justifyContent: "flex-end",
-          paddingBottom: Math.max(insets.bottom, SPACING.lg),
-        },
-      ]}
-    >
-      <View style={styles.copy}>
-        <ThemedText type="subtitle" style={styles.brand}>
-          triplanner
-        </ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.blurb}>
-          Planeje roteiros com calma: datas, orçamento e cada belo momento no mesmo lugar.
-        </ThemedText>
-      </View>
+    <ThemedView style={styles.screen}>
+      <AtmosphericBackground />
+      <View
+        style={[
+          styles.content,
+          {
+            paddingTop: Math.max(insets.top, SPACING.xl) + SPACING.xl,
+            paddingBottom: Math.max(insets.bottom, SPACING.lg),
+          },
+        ]}
+      >
+        <View style={styles.copy}>
+          <ThemedText type="display" style={styles.brand}>
+            triplanner
+          </ThemedText>
+          <ThemedText themeColor="textSecondary" style={styles.blurb}>
+            Planeje roteiros com calma: datas, orçamento e cada belo momento no mesmo lugar.
+          </ThemedText>
+        </View>
 
-      <View style={styles.actions}>
-        <Button label="Continuar como Convidado" onPress={continueAsGuest} />
-        <Button label="Entrar" variant="secondary" onPress={() => router.push("/entrar")} />
-        <Pressable
-          accessibilityRole="link"
-          onPress={() => router.push("/criar-conta")}
-          style={({ pressed }) => [styles.linkWrap, pressed && styles.linkPressed]}
-        >
-          <ThemedText type="linkPrimary">Criar Conta</ThemedText>
-        </Pressable>
+        <View style={styles.actions}>
+          <Button label="Continuar como Convidado" onPress={continueAsGuest} />
+          <Button label="Entrar" variant="secondary" onPress={() => router.push("/entrar")} />
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push("/criar-conta")}
+            style={({ pressed }) => [styles.linkWrap, pressed && styles.linkPressed]}
+          >
+            <ThemedText type="linkPrimary">Criar Conta</ThemedText>
+          </Pressable>
+        </View>
       </View>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: {
+  screen: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: "space-between",
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl,
-    borderTopLeftRadius: BORDER_RADIUS.xl,
-    borderTopRightRadius: BORDER_RADIUS.xl,
-    gap: SPACING.xl,
   },
   copy: {
-    gap: SPACING.sm,
+    gap: SPACING.md,
+    paddingTop: SPACING.xxl,
   },
   brand: {
     fontFamily: FontFamily.displaySemibold,
-    letterSpacing: -0.4,
+    letterSpacing: -0.6,
   },
   blurb: {
     fontSize: TYPOGRAPHY.sizes.md,
     lineHeight: TYPOGRAPHY.lineHeights.md,
+    maxWidth: 320,
   },
   actions: {
     gap: SPACING.md,
@@ -78,4 +83,3 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
-

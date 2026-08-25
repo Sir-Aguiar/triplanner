@@ -2,6 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { apiRequest } from '@/api/client';
 import { ApiError } from '@/api/errors';
+import { getStoredAccessToken } from '@/api/token-storage';
 import type { CloneTripResponseDto, CreateActivityDTO, CreateTripDTO } from '@/dtos';
 import type Trip from '@/database/models/Trip';
 import { createUuidV4 } from '@/database/uuid';
@@ -31,6 +32,10 @@ import {
   getPendingActivities,
   type PendingActivity,
 } from '@/stores/pending-activities';
+import {
+  addPendingTripDelete,
+  removePendingTripDelete,
+} from '@/stores/pending-deletes';
 import { sumActivityCosts, syncBudgetWithSpent } from '@/utils/budget';
 import { isLocalCoverUri } from '@/utils/cover-image';
 
@@ -146,13 +151,42 @@ export class TripService {
 
       const trip = await this.tripRepository.findById(tripId);
       const previousCover = trip.coverImage;
+      const accessToken = await getStoredAccessToken();
+
+      // Marca antes do sync em background poder reaplicar o snapshot do servidor.
+      if (accessToken) {
+        await addPendingTripDelete(tripId);
+      }
+
       await this.tripRepository.deleteWithActivities(tripId);
       if (isLocalCoverUri(previousCover)) {
         await deleteLocalCoverFile(previousCover);
       }
-      syncService.scheduleSyncAfterMutation();
+
+      if (accessToken) {
+        await this.deleteRemote(tripId, accessToken);
+      }
     } catch (error) {
       throw toServiceError(error, 'Não foi possível excluir a viagem');
+    }
+  }
+
+  /** DELETE /trips/:tripId. Sem rede ou erro recuperável → permanece na fila do próximo sync. */
+  private async deleteRemote(tripId: string, accessToken: string): Promise<void> {
+    try {
+      await apiRequest(`/trips/${tripId}`, {
+        method: 'DELETE',
+        accessToken,
+      });
+      await removePendingTripDelete(tripId);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        await removePendingTripDelete(tripId);
+        return;
+      }
+
+      await addPendingTripDelete(tripId);
+      console.error('Falha ao excluir viagem no servidor:', error);
     }
   }
 

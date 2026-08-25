@@ -69,7 +69,13 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={textColor} />
       ) : (
-        <ThemedText style={[styles.label, { color: textColor }]}>{label}</ThemedText>
+        <ThemedText
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
+          style={[styles.label, { color: textColor }]}>
+          {label}
+        </ThemedText>
       )}
     </Pressable>
   );
@@ -82,12 +88,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm + 2,
+    overflow: 'hidden',
   },
   label: {
     fontFamily: FontFamily.sansSemibold,
     fontSize: TYPOGRAPHY.sizes.md,
     lineHeight: TYPOGRAPHY.lineHeights.md,
+    textAlign: 'center',
+    width: '100%',
   },
 });

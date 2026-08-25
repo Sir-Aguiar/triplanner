@@ -130,6 +130,7 @@ export const renderSlidingTab: typeof defaultTabsSlotRender = (
       enabled={detachInactiveScreens}
       activityState={isFocused ? 2 : 1}
       freezeOnBlur={freezeOnBlur}
+      pointerEvents={isFocused ? 'auto' : 'none'}
       style={[styles.screen, isFocused ? styles.focused : styles.unfocused]}>
       <SlidingContent isFocused={isFocused} index={index}>
         {descriptor.render()}

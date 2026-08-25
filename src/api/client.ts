@@ -28,7 +28,7 @@ export const api = axios.create({
   headers: {
     Accept: 'application/json',
   },
-  timeout: 30_000,
+  timeout: 12_000,
 });
 
 api.interceptors.request.use((config) => {
@@ -56,7 +56,7 @@ async function refreshAccessToken(): Promise<string> {
         { refreshToken },
         {
           headers: { Accept: 'application/json' },
-          timeout: 30_000,
+          timeout: 12_000,
         },
       );
 

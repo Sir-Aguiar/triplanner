@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -107,12 +106,7 @@ export default function PerfilScreen() {
         ]}
         showsVerticalScrollIndicator={false}>
         <View style={[styles.card, SHADOWS.medium, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <LinearGradient
-            colors={[theme.primary, theme.secondary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.cardBanner}
-          />
+          <View style={[styles.cardBanner, { backgroundColor: theme.primary }]} />
 
           {isLoggedIn ? (
             <View style={styles.cardBody}>

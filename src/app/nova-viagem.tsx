@@ -246,7 +246,10 @@ export default function NovaViagemScreen() {
                   tintColor={theme.textOnAccent}
                   weight="medium"
                 />
-                <ThemedText style={[styles.activityCtaLabel, { color: theme.textOnAccent }]}>
+                <ThemedText
+                  numberOfLines={1}
+                  style={[styles.activityCtaLabel, { color: theme.textOnAccent }]}
+                >
                   Adicionar atividade
                 </ThemedText>
               </Pressable>

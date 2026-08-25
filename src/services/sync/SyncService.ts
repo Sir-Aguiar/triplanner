@@ -10,6 +10,12 @@ import {
   coverUploadService,
   type CoverUploadService,
 } from '@/services/trips/CoverUploadService';
+import {
+  getPendingActivityDeletes,
+  getPendingTripDeletes,
+  removePendingActivityDelete,
+  removePendingTripDelete,
+} from '@/stores/pending-deletes';
 
 export type SyncResult = 'ok' | 'offline' | 'error' | 'skipped' | 'unauthorized';
 
@@ -67,6 +73,8 @@ export class SyncService {
 
   private async runSync(accessToken: string, userId: string): Promise<SyncResult> {
     try {
+      await this.flushPendingDeletes(accessToken);
+
       const owned = await this.syncRepository.findOwnedWithActivities(userId);
       const payload = mapLocalTripsToSyncPayload(owned);
 
@@ -77,7 +85,12 @@ export class SyncService {
       });
 
       const serverTrips = Array.isArray(response?.trips) ? response.trips : [];
-      await this.syncRepository.applyServerSnapshot(userId, serverTrips);
+      const pendingTripDeletes = await getPendingTripDeletes();
+      const pendingActivityDeletes = await getPendingActivityDeletes();
+      await this.syncRepository.applyServerSnapshot(userId, serverTrips, {
+        excludeTripIds: pendingTripDeletes,
+        excludeActivityIds: pendingActivityDeletes,
+      });
 
       // RN02: só após o JSON da Trip existir no backend.
       try {
@@ -98,6 +111,55 @@ export class SyncService {
 
       console.error('Falha na sincronização de viagens:', error);
       return 'error';
+    }
+  }
+
+  /** Envia DELETE pendente de viagens e atividades que ainda não chegaram ao servidor. */
+  private async flushPendingDeletes(accessToken: string): Promise<void> {
+    const pendingTrips = await getPendingTripDeletes();
+
+    for (const tripId of pendingTrips) {
+      try {
+        await apiRequest(`/trips/${tripId}`, {
+          method: 'DELETE',
+          accessToken,
+        });
+        await removePendingTripDelete(tripId);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          await removePendingTripDelete(tripId);
+          continue;
+        }
+
+        if (error instanceof ApiError && error.status === 0) {
+          break;
+        }
+
+        console.error(`Falha ao confirmar exclusão remota da viagem ${tripId}:`, error);
+      }
+    }
+
+    const pendingActivities = await getPendingActivityDeletes();
+
+    for (const activityId of pendingActivities) {
+      try {
+        await apiRequest(`/activities/${activityId}`, {
+          method: 'DELETE',
+          accessToken,
+        });
+        await removePendingActivityDelete(activityId);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          await removePendingActivityDelete(activityId);
+          continue;
+        }
+
+        if (error instanceof ApiError && error.status === 0) {
+          break;
+        }
+
+        console.error(`Falha ao confirmar exclusão remota da atividade ${activityId}:`, error);
+      }
     }
   }
 

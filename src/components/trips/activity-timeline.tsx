@@ -212,13 +212,14 @@ export function ActivityTimeline({
         animationType="fade"
         visible={menuActivity != null}
         onRequestClose={() => setMenuActivity(null)}>
-        <Pressable
-          style={styles.menuBackdrop}
-          onPress={() => setMenuActivity(null)}
-          accessibilityRole="button"
-          accessibilityLabel="Fechar menu">
+        <View style={styles.menuBackdrop}>
           <Pressable
-            onPress={(event) => event.stopPropagation()}
+            style={StyleSheet.absoluteFill}
+            onPress={() => setMenuActivity(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Fechar menu"
+          />
+          <View
             style={[
               styles.menuSheet,
               { backgroundColor: theme.surface, borderColor: theme.border },
@@ -249,11 +250,11 @@ export function ActivityTimeline({
                   onRequestDelete(target);
                 }}
                 style={({ pressed }) => [styles.menuAction, pressed && styles.pressed]}>
-                <ThemedText style={{ color: theme.error }}>Excluir</ThemedText>
+                <ThemedText style={{ color: theme.destructive }}>Excluir</ThemedText>
               </Pressable>
             ) : null}
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -334,6 +335,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
     gap: SPACING.sm,
+    zIndex: 1,
     ...SHADOWS.medium,
   },
   menuAction: {

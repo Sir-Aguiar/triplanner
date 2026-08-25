@@ -144,7 +144,7 @@ export default function ViagensScreen() {
                 </ThemedText>
                 <View style={styles.emptyActions}>
                   <Button
-                    label="Criar minha primeira viagem"
+                    label="Criar primeira viagem"
                     variant="accent"
                     onPress={() => router.push("/nova-viagem")}
                   />

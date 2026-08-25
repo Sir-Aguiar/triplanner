@@ -42,7 +42,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             setMessage(null);
           }
         });
-      }, 2200);
+      }, 3200);
     },
     [opacity],
   );
@@ -60,7 +60,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             {
               opacity,
               backgroundColor: theme.textPrimary,
-              bottom: insets.bottom + SPACING.lg,
+              bottom: insets.bottom + 88,
             },
           ]}>
           <ThemedText style={[styles.text, { color: theme.textInverse }]}>{message}</ThemedText>

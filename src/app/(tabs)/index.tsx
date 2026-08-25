@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useMemo } from "react";
@@ -57,12 +56,7 @@ export default function HomeScreen() {
             </ThemedText>
           </View>
 
-          <LinearGradient
-            colors={[theme.primary, theme.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.heroCard, SHADOWS.medium]}
-          >
+          <View style={[styles.heroCard, SHADOWS.medium, { backgroundColor: theme.primary }]}>
             {!ready ? (
               <View style={styles.heroPlaceholder} />
             ) : nextTrip ? (
@@ -88,7 +82,9 @@ export default function HomeScreen() {
                     { backgroundColor: theme.textInverse, opacity: pressed ? OPACITY.pressed : 1 },
                   ]}
                 >
-                  <ThemedText style={[styles.heroCtaLabel, { color: theme.primary }]}>Ver detalhes</ThemedText>
+                  <ThemedText numberOfLines={1} style={[styles.heroCtaLabel, { color: theme.primary }]}>
+                    Ver detalhes
+                  </ThemedText>
                 </Pressable>
               </>
             ) : (
@@ -106,11 +102,13 @@ export default function HomeScreen() {
                     { backgroundColor: theme.accent, opacity: pressed ? OPACITY.pressed : 1 },
                   ]}
                 >
-                  <ThemedText style={[styles.heroCtaLabel, { color: theme.textOnAccent }]}>Nova viagem</ThemedText>
+                  <ThemedText numberOfLines={1} style={[styles.heroCtaLabel, { color: theme.textOnAccent }]}>
+                    Nova viagem
+                  </ThemedText>
                 </Pressable>
               </>
             )}
-          </LinearGradient>
+          </View>
 
           <View style={styles.sectionHeader}>
             <ThemedText type="subtitle" style={styles.sectionTitle}>

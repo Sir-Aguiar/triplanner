@@ -35,7 +35,9 @@ function TabBarButton({ label, icon, isFocused, style, ...props }: TabBarButtonP
       ]}
     >
       <SymbolView name={icon} size={TYPOGRAPHY.sizes.lg} tintColor={iconColor} weight="medium" />
-      <ThemedText style={[styles.label, { color: isFocused ? theme.textOnAccent : theme.textSecondary }]}>
+      <ThemedText
+        numberOfLines={1}
+        style={[styles.label, { color: isFocused ? theme.textOnAccent : theme.textSecondary }]}>
         {label}
       </ThemedText>
     </Pressable>
@@ -47,45 +49,41 @@ export function FloatingTabBar() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View pointerEvents="box-none" style={styles.host}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.anchor, { bottom: Math.max(insets.bottom, SPACING.sm) + FLOATING_TAB_BAR_MARGIN }]}
+    >
       <View
-        pointerEvents="box-none"
-        style={[styles.anchor, { bottom: Math.max(insets.bottom, SPACING.sm) + FLOATING_TAB_BAR_MARGIN }]}
+        style={[
+          styles.pill,
+          SHADOWS.medium,
+          {
+            backgroundColor: theme.surface,
+            borderColor: theme.border,
+          },
+        ]}
       >
-        <View
-          style={[
-            styles.pill,
-            SHADOWS.medium,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.border,
-            },
-          ]}
-        >
-          <TabTrigger name="index" asChild>
-            <TabBarButton label="Início" icon={{ ios: "house.fill", android: "home", web: "home" }} />
-          </TabTrigger>
-          <TabTrigger name="viagens" asChild>
-            <TabBarButton label="Viagens" icon={{ ios: "suitcase", android: "luggage", web: "luggage" }} />
-          </TabTrigger>
-          <TabTrigger name="perfil" asChild>
-            <TabBarButton label="Perfil" icon={{ ios: "person.fill", android: "person", web: "person" }} />
-          </TabTrigger>
-        </View>
+        <TabTrigger name="index" asChild>
+          <TabBarButton label="Início" icon={{ ios: "house.fill", android: "home", web: "home" }} />
+        </TabTrigger>
+        <TabTrigger name="viagens" asChild>
+          <TabBarButton label="Viagens" icon={{ ios: "suitcase", android: "luggage", web: "luggage" }} />
+        </TabTrigger>
+        <TabTrigger name="perfil" asChild>
+          <TabBarButton label="Perfil" icon={{ ios: "person.fill", android: "person", web: "person" }} />
+        </TabTrigger>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  host: {
-    ...StyleSheet.absoluteFill,
-  },
   anchor: {
     position: "absolute",
     left: 0,
     right: 0,
     alignItems: "center",
+    zIndex: 10,
   },
   pill: {
     flexDirection: "row",
