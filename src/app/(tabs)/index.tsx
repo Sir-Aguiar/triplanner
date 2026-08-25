@@ -161,6 +161,9 @@ export default function HomeScreen() {
               author={item.author}
               meta={formatFeedMeta(item)}
               hideVisibilityBadge
+              onPress={(tripId) =>
+                router.push({ pathname: '/viagem-publica/[id]', params: { id: tripId } })
+              }
               onClone={(tripId) => {
                 void requestClone(tripId);
               }}

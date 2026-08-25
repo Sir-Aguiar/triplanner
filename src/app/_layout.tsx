@@ -89,6 +89,13 @@ function AppStack() {
         }}
       />
       <Stack.Screen
+        name="viagem-publica/[id]"
+        options={{
+          headerShown: true,
+          title: "Roteiro da comunidade",
+        }}
+      />
+      <Stack.Screen
         name="welcome"
         options={{
           presentation: "formSheet",

@@ -61,3 +61,9 @@ export type {
   PublicFeedAuthorDto,
   PublicFeedItemDto,
 } from './social/PublicFeedDTO';
+
+export type {
+  PublicTripActivityDto,
+  PublicTripCategoryDto,
+  PublicTripDto,
+} from './social/PublicTripDTO';

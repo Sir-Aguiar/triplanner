@@ -1,6 +1,10 @@
 import { apiRequest } from '@/api/client';
 import { ApiError } from '@/api/errors';
-import type { GetPublicFeedQuery, GetPublicFeedResponseDto } from '@/dtos';
+import type {
+  GetPublicFeedQuery,
+  GetPublicFeedResponseDto,
+  PublicTripDto,
+} from '@/dtos';
 import { ServiceError, toServiceError } from '@/services/errors';
 
 function buildFeedParams(query: GetPublicFeedQuery = {}): Record<string, string | number> {
@@ -51,6 +55,31 @@ export class SocialService {
       }
 
       throw toServiceError(error, 'Não foi possível carregar o feed');
+    }
+  }
+
+  /** GET /social/trips/:tripId — detalhe de viagem pública (requer Bearer token). */
+  async getTrip(accessToken: string, tripId: string): Promise<PublicTripDto> {
+    try {
+      return await apiRequest<PublicTripDto>(`/social/trips/${tripId}`, {
+        method: 'GET',
+        accessToken,
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          throw new ServiceError('Faça login para ver este roteiro.', error);
+        }
+        if (error.status === 404) {
+          throw new ServiceError('Roteiro não encontrado.', error);
+        }
+        if (error.status === 403) {
+          throw new ServiceError('Este roteiro não está disponível publicamente.', error);
+        }
+        throw new ServiceError(error.message || 'Não foi possível carregar o roteiro.', error);
+      }
+
+      throw toServiceError(error, 'Não foi possível carregar o roteiro');
     }
   }
 }
