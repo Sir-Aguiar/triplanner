@@ -13,7 +13,14 @@ export default function TabsLayout() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <AppHeader />
       <TabTransitionProvider>
-        <Tabs style={styles.tabs}>
+        <Tabs
+          style={styles.tabs}
+          options={{
+            screenOptions: {
+              freezeOnBlur: true,
+            },
+          }}
+        >
           <TabSlot style={styles.slot} renderFn={renderSlidingTab} />
           <FloatingTabBar />
           <TabList style={styles.hiddenList}>

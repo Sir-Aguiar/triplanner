@@ -55,6 +55,31 @@ export function TabTransitionProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Mantém a Screen nativa anexada só o tempo da animação de saída.
+ * Com activityState=1 permanente + absoluteFill, telas inativas engolem toques
+ * no Fabric / react-native-screens 4.26 — UI visível, Pressable morto até reiniciar.
+ */
+function useTabActivityState(isFocused: boolean): 0 | 1 | 2 {
+  const [activityState, setActivityState] = useState<0 | 1 | 2>(isFocused ? 2 : 0);
+
+  useEffect(() => {
+    if (isFocused) {
+      setActivityState(2);
+      return;
+    }
+
+    setActivityState(1);
+    const timeout = setTimeout(() => {
+      setActivityState(0);
+    }, SLIDE_MS + 40);
+
+    return () => clearTimeout(timeout);
+  }, [isFocused]);
+
+  return activityState;
+}
+
 type SlidingContentProps = {
   isFocused: boolean;
   index: number;
@@ -106,6 +131,44 @@ function SlidingContent({ isFocused, index, children }: SlidingContentProps) {
   );
 }
 
+type TabScreenProps = {
+  descriptor: Parameters<typeof defaultTabsSlotRender>[0];
+  isFocused: boolean;
+  index: number;
+  detachInactiveScreens: boolean;
+  freezeOnBlur?: boolean;
+};
+
+function TabScreen({
+  descriptor,
+  isFocused,
+  index,
+  detachInactiveScreens,
+  freezeOnBlur,
+}: TabScreenProps) {
+  const activityState = useTabActivityState(isFocused);
+
+  return (
+    <Screen
+      key={descriptor.route.key}
+      enabled={detachInactiveScreens}
+      activityState={activityState}
+      freezeOnBlur={freezeOnBlur}
+      pointerEvents={isFocused ? 'auto' : 'none'}
+      style={[
+        styles.screen,
+        isFocused ? styles.focused : styles.unfocused,
+        // Garante que a Screen nativa fora de foco não participe do hit-test
+        // mesmo se pointerEvents/prop activityState atrasarem no Fabric.
+        !isFocused && activityState === 0 ? styles.detached : null,
+      ]}>
+      <SlidingContent isFocused={isFocused} index={index}>
+        {descriptor.render()}
+      </SlidingContent>
+    </Screen>
+  );
+}
+
 /**
  * Precisa retornar `Screen` (RNScreens) como filho direto do ScreenContainer.
  * A animação fica *dentro* do Screen.
@@ -125,17 +188,14 @@ export const renderSlidingTab: typeof defaultTabsSlotRender = (
   }
 
   return (
-    <Screen
+    <TabScreen
       key={descriptor.route.key}
-      enabled={detachInactiveScreens}
-      activityState={isFocused ? 2 : 1}
+      descriptor={descriptor}
+      isFocused={isFocused}
+      index={index}
+      detachInactiveScreens={detachInactiveScreens}
       freezeOnBlur={freezeOnBlur}
-      pointerEvents={isFocused ? 'auto' : 'none'}
-      style={[styles.screen, isFocused ? styles.focused : styles.unfocused]}>
-      <SlidingContent isFocused={isFocused} index={index}>
-        {descriptor.render()}
-      </SlidingContent>
-    </Screen>
+    />
   );
 };
 
@@ -153,6 +213,10 @@ const styles = StyleSheet.create({
   },
   unfocused: {
     zIndex: 1,
+  },
+  detached: {
+    // Fora da árvore de layout para hit-testing no Android/Fabric.
+    opacity: 0,
   },
   content: {
     flex: 1,

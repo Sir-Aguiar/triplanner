@@ -134,7 +134,11 @@ function RootNavigator() {
     <View style={styles.navigatorRoot}>
       <AppStack />
       {isSyncingOnOpen ? (
-        <View style={styles.syncOverlay} pointerEvents="auto">
+        <View
+          style={styles.syncOverlay}
+          pointerEvents="auto"
+          accessibilityViewIsModal
+          importantForAccessibility="yes">
           <DatabaseLoadingScreen
             title="Sincronizando"
             subtitle="Atualizando suas viagens com o servidor. Aguarde um momento."

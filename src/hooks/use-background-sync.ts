@@ -8,6 +8,8 @@ import { syncService, tripService } from '@/services';
 import { isNetworkStateOnline } from '@/utils/network';
 
 const OFFLINE_TOAST = 'Você continuará em modo offline.';
+/** Evita overlay eterno se a API travar (fila de deletes, etc.). */
+const OPEN_SYNC_UI_TIMEOUT_MS = 15_000;
 
 type Credentials = {
   accessToken: string;
@@ -17,6 +19,9 @@ type Credentials = {
 /**
  * Sincroniza ao abrir (com loading), ao ir para background e ao recuperar a internet.
  * Mutações autenticadas com rede aguardam `syncAfterLocalChange` (app e servidor alinhados).
+ *
+ * O overlay bloqueante só aparece na 1ª sync da sessão — retomada do background é silenciosa,
+ * senão a UI fica “morta” (toques não registram) enquanto o sync engole a tela.
  */
 export function useBackgroundSync() {
   const { isLoggedIn, isLoading, session, user } = useSession();
@@ -41,34 +46,59 @@ export function useBackgroundSync() {
     setHasCompletedOpenSync(false);
   }, [isLoggedIn, session, user?.userId]);
 
-  const runOpenSync = useCallback(async () => {
-    const creds = credentialsRef.current;
-    if (!creds) {
-      return;
+  const finishOpenSyncUi = useCallback((generation: number) => {
+    if (generation === openSyncGenerationRef.current) {
+      setIsOpenSyncInProgress(false);
+      setHasCompletedOpenSync(true);
     }
+  }, []);
 
-    const generation = ++openSyncGenerationRef.current;
-    setIsOpenSyncInProgress(true);
-
-    try {
-      try {
-        await tripService.claimOrphanTrips(creds.userId);
-      } catch (error) {
-        console.error('Falha ao vincular viagens órfãs antes do sync:', error);
+  const runOpenSync = useCallback(
+    async (options?: { blockUi?: boolean }) => {
+      const creds = credentialsRef.current;
+      if (!creds) {
         return;
       }
 
-      const result = await syncService.syncNow(creds.accessToken, creds.userId);
-      if (result === 'offline' || result === 'error') {
-        showToast(OFFLINE_TOAST);
+      const blockUi = options?.blockUi ?? false;
+      const generation = ++openSyncGenerationRef.current;
+
+      if (blockUi) {
+        setIsOpenSyncInProgress(true);
       }
-    } finally {
-      if (generation === openSyncGenerationRef.current) {
-        setIsOpenSyncInProgress(false);
-        setHasCompletedOpenSync(true);
+
+      const safetyTimer =
+        blockUi
+          ? setTimeout(() => {
+              finishOpenSyncUi(generation);
+            }, OPEN_SYNC_UI_TIMEOUT_MS)
+          : null;
+
+      try {
+        try {
+          await tripService.claimOrphanTrips(creds.userId);
+        } catch (error) {
+          console.error('Falha ao vincular viagens órfãs antes do sync:', error);
+          return;
+        }
+
+        const result = await syncService.syncNow(creds.accessToken, creds.userId);
+        if (result === 'offline' || result === 'error') {
+          showToast(OFFLINE_TOAST);
+        }
+      } finally {
+        if (safetyTimer) {
+          clearTimeout(safetyTimer);
+        }
+        if (blockUi) {
+          finishOpenSyncUi(generation);
+        } else if (generation === openSyncGenerationRef.current) {
+          setHasCompletedOpenSync(true);
+        }
       }
-    }
-  }, [showToast]);
+    },
+    [finishOpenSyncUi, showToast],
+  );
 
   const runSilentSync = useCallback(() => {
     const creds = credentialsRef.current;
@@ -93,7 +123,7 @@ export function useBackgroundSync() {
       return;
     }
 
-    void runOpenSync();
+    void runOpenSync({ blockUi: true });
   }, [isAuthenticated, runOpenSync]);
 
   useEffect(() => {
@@ -102,7 +132,8 @@ export function useBackgroundSync() {
       appStateRef.current = nextState;
 
       if (previousState === 'background' && nextState === 'active') {
-        void runOpenSync();
+        // Silencioso: overlay bloqueante no resume engolia todos os toques.
+        runSilentSync();
         return;
       }
 
@@ -112,7 +143,7 @@ export function useBackgroundSync() {
     });
 
     return () => subscription.remove();
-  }, [runSilentSync, runOpenSync]);
+  }, [runSilentSync]);
 
   useEffect(() => {
     if (!isAuthenticated) {

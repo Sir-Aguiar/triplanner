@@ -16,6 +16,15 @@ export function AnimatedSplashOverlay() {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    // Failsafe: nunca deixe o overlay montado se a animação/callback falhar.
+    const failsafe = setTimeout(() => {
+      setVisible(false);
+    }, DURATION + 2_000);
+
+    return () => clearTimeout(failsafe);
+  }, []);
+
+  useEffect(() => {
     if (!animate) {
       return;
     }
